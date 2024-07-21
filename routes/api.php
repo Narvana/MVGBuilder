@@ -22,11 +22,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => 'api', 'prefix' => 'auth'], function () {
     Route::post("/register/agent",[AgentRegisterController::class,'registerAgent']);
-    Route::get('/login/agent', [AgentRegisterController::class, 'loginAgent']);
+    Route::post('/login/agent', [AgentRegisterController::class, 'loginAgent']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile/agent', [AgentRegisterController::class, 'profile']);
+    Route::post('/add/profile/agent', [AgentRegisterController::class, 'addProfile']);
 });
 
 

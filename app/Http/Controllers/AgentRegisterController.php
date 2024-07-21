@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AgentRegister;
 use App\Http\Controllers\Controller;
+use App\Models\AgentProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -104,5 +105,53 @@ class AgentRegisterController extends Controller
             'success' => 1,
             'agent' => $agent,
         ], 200);
+    }
+
+    public function addProfile(Request $request){
+        $agent = Auth::user();
+        $agent_profile=AgentProfile::where('agent_id',$agent->id)->first();
+        $validator=Validator::make($request->all(),[
+            'agent_id' => $agent_profile ? 'nullable|integer|exists:agent_registers,id' : 'required|integer|exists:agent_registers,id',
+            'designation' => $agent_profile ? 'nullable|string' : 'required|string',
+            'description' =>  $agent_profile ? 'nullable|string' : 'required|string',
+            'contact_no' =>  $agent_profile ? 'nullable|string|min:10|max:10' : 'required|string|min:10|max:10',
+            'address'=>  $agent_profile ? 'nullable|string' : 'required|string'
+        ]);
+
+        if ($validator->fails()) {
+            $errors = $validator->errors()->all(); // Get all error messages
+            $formattedErrors = [];
+    
+            foreach ($errors as $error) {
+                $formattedErrors[] = $error;
+            }
+    
+            return response()->json([
+                'success' => 0,
+                'errors' => $formattedErrors
+            ], 422);
+        }   
+
+        $profile=$request->only(['designation','description','contact_no','address']);
+        if($agent_profile){
+            $agent->fullname = $request->fullname;
+            $agent_profile->update($profile);
+            $agent->save();
+
+            return response()->json([
+                'success'=>1,
+                'message' => 'Profile updated successfully',
+                'profile' => $agent_profile,
+                'agent' => $agent
+            ], 201);
+        }
+        $agentprofile=AgentProfile::create([
+         'agent_id'=>$agent->id,
+         'designation'=>$profile['designation'],
+         'description'=>$profile['description'],
+         'contact_no'=>$profile['contact_no'],
+         'address' => $profile['address'],
+        ]);
+        return response()->json(['success'=>1, 'message' => 'Profile created successfully', 'profile' => $agentprofile, 'agent'=>$agent], 201);
     }
 }
