@@ -28,6 +28,7 @@ Route::group(['middleware' => 'api', 'prefix' => 'auth'], function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile/agent', [AgentRegisterController::class, 'profile']);
     Route::post('/add/profile/agent', [AgentRegisterController::class, 'addProfile']);
+    Route::post('/changePassword/agent',[AgentRegisterController::class,'changePassword']);
 });
 
 

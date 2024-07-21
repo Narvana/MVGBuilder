@@ -93,7 +93,7 @@ class AgentRegisterController extends Controller
     
         return response()->json([
             'success' => 0,
-            'message' => 'Invalid credentials'
+            'message' => 'Invalid credentials or Wrong Password'
         ], 401);
 
     }
@@ -137,7 +137,7 @@ class AgentRegisterController extends Controller
             $agent->fullname = $request->fullname;
             $agent_profile->update($profile);
             $agent->save();
-
+            
             return response()->json([
                 'success'=>1,
                 'message' => 'Profile updated successfully',
@@ -153,5 +153,46 @@ class AgentRegisterController extends Controller
          'address' => $profile['address'],
         ]);
         return response()->json(['success'=>1, 'message' => 'Profile created successfully', 'profile' => $agentprofile, 'agent'=>$agent], 201);
+    }
+
+    public function changePassword(Request $request)
+    {
+        try {
+            //code...
+            $validator=Validator::make($request->all(),[
+                'password'=>  [
+                    'required',
+                    'string',
+                    'min:8',
+                    'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/'
+                ],
+            ]);
+    
+            if ($validator->fails()) {
+                $errors = $validator->errors()->all(); // Get all error messages
+                $formattedErrors = [];
+        
+                foreach ($errors as $error) {
+                    $formattedErrors[] = $error;
+                }
+                return response()->json([
+                    'success' => 0,
+                    'errors' => $formattedErrors
+                ], 422);
+            }   
+            $agent=Auth::user();
+            if(!$agent){
+                return response()->json([
+                    'success' => 0,
+                    'message' => 'Agent Not Found'
+                ], 404);
+            }
+            $agent->password=Hash::make($request->password);
+            $agent->save();
+            return response()->json(['success'=>1, 'message' => 'Password Updated'], 201);
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+
     }
 }
