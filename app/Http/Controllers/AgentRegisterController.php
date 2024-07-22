@@ -125,7 +125,7 @@ class AgentRegisterController extends Controller
             'designation' => $agent_profile ? 'nullable|string' : 'required|string',
             'description' =>  $agent_profile ? 'nullable|string' : 'required|string',
             'contact_no' =>  $agent_profile ? 'nullable|string|min:10|max:10' : 'required|string|min:10|max:10',
-            'address'=>  $agent_profile ? 'nullable|string' : 'required|string'
+            'address'=>  $agent_profile ? 'nullable|string' : 'required|string' 
         ]);
 
         if ($validator->fails()) {
@@ -144,9 +144,12 @@ class AgentRegisterController extends Controller
 
         $profile=$request->only(['designation','description','contact_no','address']);
         if($agent_profile){
-            $agent->fullname = $request->fullname;
+            if(isset( $request->fullname))
+            {
+                $agent->fullname = $request->fullname;
+                $agent->save();
+            }
             $agent_profile->update($profile);
-            $agent->save();
             
             return response()->json([
                 'success'=>1,
