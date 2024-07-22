@@ -100,10 +100,20 @@ class AgentRegisterController extends Controller
 
     public function profile(Request $request){
         $agent = Auth::user();
+        $profile=AgentProfile::where('agent_id',$agent->id)->get();
+        // $agent->id;
 
+        if(!$profile){
+            return response()->json([
+                'success' => 1,
+                'agent' => $agent,
+                'profile'=>'Profile Value in Not Empty'
+            ], 200);
+        }
         return response()->json([
             'success' => 1,
             'agent' => $agent,
+            'profile'=>$profile
         ], 200);
     }
 
