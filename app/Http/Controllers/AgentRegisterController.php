@@ -32,7 +32,7 @@ class AgentRegisterController extends Controller
             foreach ($errors as $error) {
                 $formattedErrors[] = $error;
             }
-    
+
             return response()->json([
                 'success' => 0,
                 'errors' => $formattedErrors
@@ -44,12 +44,14 @@ class AgentRegisterController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
-
-        if(!$agent)
-        {
-            return response()->json(['success'=>0,'message'=>'Agent Not Registered. Call to Support System'],400);
+        try {
+            $agent->assignRole('agent');
+            return response()->json(['success' => 1, 'data' => $agent], 201);
+        } catch (\Exception $e) {
+            return response()->json(['success' => 0, 'message' => 'Role assignment failed', 'error' => $e->getMessage()], 500);
         }
-        return response()->json(['success'=>1,'data'=>$agent],201);
+    
+
     }
 
     public function loginAgent(Request $request)
@@ -79,11 +81,15 @@ class AgentRegisterController extends Controller
         }   
 
         $agent = AgentRegister::where('email', $request->email)->first();
-
+        if (!$agent->hasRole('agent')) 
+            {
+                // User has the 'admin' role
+                return response()->json(['error' => 'Unauthorized Login Role. Only Agent can Login'], 401);  
+            }
         if ($agent && Hash::check($request->password, $agent->password)) {
             // Create a token for the user
             $token = $agent->createToken('auth-token')->plainTextToken;
-    
+
             return response()->json([
                 'success' => 1,
                 'agent' => $agent,
@@ -204,7 +210,7 @@ class AgentRegisterController extends Controller
             $agent->save();
             return response()->json(['success'=>1, 'message' => 'Password Updated'], 201);
         } catch (\Throwable $th) {
-            //throw $th;
+            return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
         }
 
     }

@@ -2,21 +2,21 @@
 
 namespace App\Models;
 
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Laravel\Sanctum\HasApiTokens; // Import this trait
-// use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-class AgentRegister extends Model
+class AdminRegister extends Model
 {
-    use HasApiTokens,HasRoles,HasFactory,Notifiable;
-
-    protected $guard_name = 'api';
+    use HasFactory,HasRoles,HasApiTokens, Notifiable;
     
+    protected $guard_name = 'api';
+
     protected $fillable=[
-        'fullname',
+        'name',
         'email',
         'password'
     ];

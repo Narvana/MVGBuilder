@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\AdminRegisterController;
 use App\Http\Controllers\AgentRegisterController;
+use App\Http\Controllers\PlotController;
+use App\Http\Controllers\SiteController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -20,15 +23,27 @@ use Illuminate\Support\Facades\Route;
 // });
 
 
-Route::group(['middleware' => 'api', 'prefix' => 'auth'], function () {
+Route::group([ 'middleware'=>'api', 'prefix' => 'auth'], function () {
     Route::post("/register/agent",[AgentRegisterController::class,'registerAgent']);
-    Route::post('/login/agent', [AgentRegisterController::class, 'loginAgent']);
+    Route::post("/login/agent", [AgentRegisterController::class, 'loginAgent']);
+    Route::post("/register/admin",[AdminRegisterController::class,'registerAdmin']);
+    Route::post("/login/admin",[AdminRegisterController::class,'loginAdmin']);
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum','role:agent'])->group(function () {
     Route::get('/profile/agent', [AgentRegisterController::class, 'profile']);
     Route::post('/add/profile/agent', [AgentRegisterController::class, 'addProfile']);
     Route::post('/changePassword/agent',[AgentRegisterController::class,'changePassword']);
+});
+
+Route::middleware(['auth:sanctum','role:admin'])->group(function () {
+    Route::get('/profile/Admin',[AdminRegisterController::class, 'profileAdmin']);
+    Route::post('/add/Site',[SiteController::class,'addSite']);
+    Route::get('/show/Site',[SiteController::class,'showSite']);
+    Route::delete('/remove/Site',[SiteController::class,'removeSite']);
+    Route::post('/add/Plot',[PlotController::class,'addPlot']);
+    Route::get('/show/Plot',[PlotController::class,'showPlot']);
+    Route::delete('/remove/Plot',[PlotController::class,'removePlot']);
 });
 
 
