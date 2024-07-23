@@ -12,6 +12,9 @@ class ClientController extends Model
         'client_name',
         'client_contact',
         'client_address',
-        'plot_id'
+        'client_city',
+        'client_state',
+        'plot_id',
+        'agent_id'
     ];
 }

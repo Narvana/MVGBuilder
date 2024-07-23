@@ -3,27 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\Plot;
+use App\Models\AgentProfile;
 use Illuminate\Http\Request;
+use App\Models\ClientController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
-class PlotController extends Controller
+class ClientControllerController extends Controller
 {
     //
-    public function addPlot(Request $request)
-    {
+    public function addClient(Request $request){
         try {
             //code...
             $params=$request->query('id');
-            $plot=Plot::where('id',$params)->first();            
+            $client=ClientController::where('id',$params)->first();
             $validator=Validator::make($request->all(),[
-                'site_id' => $plot ? 'nullable|integer' : 'required|integer',
-                'plot_No' => $plot ? 'nullable|string' : 'required|string',
-                'plot_type' =>  $plot ? 'nullable|string' : 'required|string',
-                'plot_area' =>  $plot ? 'nullable|string' : 'required|string',
-                'price_from' =>  $plot ? 'nullable|integer' : 'required|integer',
-                'price_to' =>  $plot ? 'nullable|integer' : 'required|integer',            
-                'price_status' => $plot ? 'nullable|string' : 'required|string',
+                'client_name'=> $client ? 'nullable|string' : 'required|string',
+                'client_contact'=>$client ? 'nullable|string|min:10|max:10' : 'required|string|min:10|max:10',
+                'client_address'=>$client ? 'nullable|string' : 'required|string',
+                'client_city'=>'nullable|string' ,
+                'client_state' => $client ? 'nullable|string' : 'required|string',
+                'plot_id' => $client ? 'nullable|integer' : 'required|integer',
+                // 'agent_id' => $client ? 'nullable|integer' : 'required|integer'
             ]);
     
             if ($validator->fails()) {
@@ -38,65 +39,68 @@ class PlotController extends Controller
                     'success' => 0,
                     'errors' => $formattedErrors
                 ], 422);
-            }   
+            } 
+            
+            $data = $validator->validated();
 
-            $data=$validator->validated();
-
-            if($plot){
-                $plot->update($data);
+            if($client){
+                $client->update($data);
                 return response()->json([
                     'success'=>1,
                     'message' => 'Plot updated successfully',
-                    'Plot' => $plot
+                    'client' => $client
                 ], 201);
             }
-            $newPlot=Plot::create($data);
+
+            $agent = Auth::guard('sanctum')->user();
+            $data['agent_id']=$agent->id;
+            $newClient=ClientController::create($data);
             return response()->json([
-                'success'=>1, 
+                'success'=>1,
                 'message' => 'Plot Added successfully',
-                'plot' => $newPlot
+                'plot' => $newClient
             ], 201);
+
         } catch (\Throwable $th) {
             return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
         }
     }
 
-    public function showPlot(Request $request)
+    public function showClient(Request $request)
     {
         try {
             //code...            
-            $plots=Plot::get();
+            $clients=ClientController::get();
             $params=$request->query('id');
-            if($plots->isEmpty())
+            if($clients->isEmpty())
             {
                 return response()->json(['success'=>0,'message'=>'No data Found'],404);
             }
             if($params){
-                $plot = Plot::find($params);
-                if(!$plot)
+                $client = ClientController::find($params);
+                if(!$client)
                 {
                     return response()->json(['success'=>0,'message'=>"No data Found, in id {$params}"],404);   
                 }
-                return response()->json(['success'=>1,'plot'=>$plot],200);
+                return response()->json(['success'=>1,'client'=>$client],200);
             }
-            return response()->json(['success'=>1,'plots'=>$plots],200);
+            return response()->json(['success'=>1,'clients'=>$clients],200);
         } catch (\Throwable $th) {
             return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
         }
     }
 
-    public function removePlot(Request $request){
+    public function removeClient(Request $request){
         try {
             //code...
             $params=$request->query('id');
-// -            $plot=Plot::where('id',$params)->first();
-            $plot = Plot::find($params);
-            if(!$plot)
+            $client = ClientController::find($params);
+            if(!$client)
             {
                 return response()->json(['success'=>0,'message'=>"No data Found, in id {$params}"],404);
             }
-            $plot->delete();
-            return response()->json(['success'=>1,'message'=>'Plot Removed'],200);
+            $client->delete();
+            return response()->json(['success'=>1,'message'=>'Client Removed'],200);
         }catch (\Throwable $th) {
             return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
         }

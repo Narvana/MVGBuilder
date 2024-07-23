@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\AgentRegister;
-use App\Http\Controllers\Controller;
 use App\Models\AgentProfile;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;

@@ -74,7 +74,11 @@ class SiteController extends Controller
                 return response()->json(['success'=>0,'message'=>'No data Found'],404);
             }
             if($params){
-                $site = Site::find($params);   
+                $site = Site::find($params);  
+                if(!$site)
+                {
+                    return response()->json(['success'=>0,'message'=>"No data Found, in id {$params}"],404);   
+                }
                 return response()->json(['success'=>1,'site'=>$site],200);
             }
             return response()->json(['success'=>1,'sites'=>$sites],200);
@@ -91,7 +95,7 @@ class SiteController extends Controller
             $sites=Site::where('id',$params)->first();
             if(!$sites)
             {
-                return response()->json(['success'=>0,'message'=>'No data Found'],404);
+                return response()->json(['success'=>0,'message'=>"No data Found, in id {$params}"],404);
             }
             $sites->delete();
             return response()->json(['success'=>1,'message'=>'Site Removed'],200);

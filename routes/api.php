@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminRegisterController;
 use App\Http\Controllers\AgentRegisterController;
+use App\Http\Controllers\ClientControllerController;
 use App\Http\Controllers\PlotController;
 use App\Http\Controllers\SiteController;
 use Illuminate\Http\Request;
@@ -34,16 +35,25 @@ Route::middleware(['auth:sanctum','role:agent'])->group(function () {
     Route::get('/profile/agent', [AgentRegisterController::class, 'profile']);
     Route::post('/add/profile/agent', [AgentRegisterController::class, 'addProfile']);
     Route::post('/changePassword/agent',[AgentRegisterController::class,'changePassword']);
+    Route::post('/addClient/agent',[ClientControllerController::class,'addClient']);
 });
 
 Route::middleware(['auth:sanctum','role:admin'])->group(function () {
     Route::get('/profile/Admin',[AdminRegisterController::class, 'profileAdmin']);
     Route::post('/add/Site',[SiteController::class,'addSite']);
-    Route::get('/show/Site',[SiteController::class,'showSite']);
+
     Route::delete('/remove/Site',[SiteController::class,'removeSite']);
     Route::post('/add/Plot',[PlotController::class,'addPlot']);
-    Route::get('/show/Plot',[PlotController::class,'showPlot']);
+
     Route::delete('/remove/Plot',[PlotController::class,'removePlot']);
+
+    Route::delete('remove/Client',[ClientControllerController::class,'removeClient']);
 });
+
+Route::get('/show/Site',[SiteController::class,'showSite']);
+
+Route::get('/show/Plot',[PlotController::class,'showPlot']);
+
+Route::get('/showClient',[ClientControllerController::class,'showClient']);
 
 
