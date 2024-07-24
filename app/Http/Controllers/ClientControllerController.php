@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+
 use App\Models\AgentProfile;
-use Illuminate\Http\Request;
 use App\Models\ClientController;
+use App\Models\Plot_Sale;
+use App\Models\Plot;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
@@ -15,53 +18,113 @@ class ClientControllerController extends Controller
     public function addClient(Request $request){
         try {
             //code...
-            $params=$request->query('id');
-            $client=ClientController::where('id',$params)->first();
-            $validator=Validator::make($request->all(),[
-                'client_name'=> $client ? 'nullable|string' : 'required|string',
-                'client_contact'=>$client ? 'nullable|string|min:10|max:10' : 'required|string|min:10|max:10',
-                'client_address'=>$client ? 'nullable|string' : 'required|string',
-                'client_city'=>'nullable|string' ,
-                'client_state' => $client ? 'nullable|string' : 'required|string',
-                'plot_id' => $client ? 'nullable|integer' : 'required|integer',
-                // 'agent_id' => $client ? 'nullable|integer' : 'required|integer'
+            $validator = Validator::make($request->all(), [
+                'client_name' => 'required|string',
+                'client_contact' => 'required|string|min:10|max:10',
+                'client_address' => 'required|string',
+                'client_city' => 'nullable|string',
+                'client_state' => 'required|string',
+                'plot_id' => 'required|integer|unique:plot_sales',
+                'rangeAmount' => 'required|integer',
             ]);
-    
+            
             if ($validator->fails()) {
-                $errors = $validator->errors()->all(); // Get all error messages
-                $formattedErrors = [];
-        
-                foreach ($errors as $error) {
-                    $formattedErrors[] = $error;
-                }
-        
                 return response()->json([
                     'success' => 0,
-                    'errors' => $formattedErrors
+                    'errors' => $validator->errors()->all()
                 ], 422);
-            } 
+            }
             
             $data = $validator->validated();
-
-            if($client){
-                $client->update($data);
-                return response()->json([
-                    'success'=>1,
-                    'message' => 'Plot updated successfully',
-                    'client' => $client
-                ], 201);
-            }
-
             $agent = Auth::guard('sanctum')->user();
-            $data['agent_id']=$agent->id;
-            $newClient=ClientController::create($data);
-            return response()->json([
-                'success'=>1,
-                'message' => 'Plot Added successfully',
-                'plot' => $newClient
-            ], 201);
+            
+            $plot = Plot::where('id',$data['plot_id'])->first();
 
-        } catch (\Throwable $th) {
+            if (!$plot) {
+                return response()->json([
+                    'success' => 0,
+                    'message' => 'Plot not found',
+                ], 404);
+            }
+            
+            $client = ClientController::where('client_contact', $data['client_contact'])->first();
+            
+            if ($data['rangeAmount'] < $plot->price_from || $data['rangeAmount'] > $plot->price_to) {
+                return response()->json([
+                    'success' => 0,
+                    'message' => "Amount should be between {$plot->price_from} and {$plot->price_to}",
+                ], 422);
+            }
+            
+            if (!$client) {
+                $newClient = ClientController::create([
+                    'client_name' => $data['client_name'],
+                    'client_contact' => $data['client_contact'],
+                    'client_address' => $data['client_address'],
+                    'client_city' => $data['client_city'] ?? '',
+                    'client_state' => $data['client_state']
+                ]);
+            
+                if (!$newClient) {
+                    return response()->json([
+                        'success' => 0,
+                        'message' => 'Client Not Added',
+                    ], 500);
+                }
+            
+                $clientId = $newClient->id;
+            } else {
+                $clientId = $client->id; // Use existing client
+            }
+            
+            $existingPlotSale = Plot_Sale::where('plot_id', $data['plot_id'])
+                ->where('client_id', $clientId)
+                ->first();
+            
+            if ($existingPlotSale) {
+                return response()->json([
+                    'success' => 0,
+                    'message' => "Plot is already assigned to {$client->client_name}.",
+                ], 409);
+            }
+            
+            $totalAmount = $data['rangeAmount'] * $plot->plot_area;
+            
+            $plot_sale = Plot_Sale::create([
+                'plot_id' => $data['plot_id'],
+                'client_id' => $clientId,
+                'agent_id' => $agent->id,
+                'totalAmount' => $totalAmount,
+                'plot_value' => 0.00
+            ]);
+            
+            if (!$plot_sale) {
+                return response()->json([
+                    'success' => 0,
+                    'message' => 'Failed to create Plot Sale'
+                ], 500);
+            }
+            
+            $updateSuccess = $plot->update([
+                'plot_status' => 'PENDING'
+            ]);
+            
+            if (!$updateSuccess) {
+                return response()->json([
+                    'success' => 0,
+                    'message' => 'Failed to update plot status',
+                ], 500);
+            }
+            
+            return response()->json([
+                'success' => 1,
+                'message' => "Client Registered successfully",
+                'client' => $client ? $client : $newClient,
+                'plot_sale' => $plot_sale,
+                'plot' =>$plot
+            ], 201);
+        } 
+        catch (\Throwable $th) {
             return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
         }
     }
@@ -90,6 +153,57 @@ class ClientControllerController extends Controller
         }
     }
 
+    public function updateClient(Request $request)
+    {
+        try {
+            //code...
+            $params=$request->query('id');
+            $client=ClientController::where('id',$params)->first();
+            $validator=Validator::make($request->all(),[
+                'client_name'=>  'nullable|string',
+                'client_contact'=> 'nullable|string|min:10|max:10',
+                'client_address'=>'nullable|string',
+                'client_city'=>'nullable|string' ,
+                'client_state' => 'nullable|string',
+            ]);
+ 
+         if ($validator->fails()) {
+             $errors = $validator->errors()->all(); // Get all error messages
+             $formattedErrors = [];
+     
+             foreach ($errors as $error) {
+                 $formattedErrors[] = $error;
+             }
+     
+             return response()->json([
+                 'success' => 0,
+                 'errors' => $formattedErrors
+             ], 422);
+         }
+
+          $data = $validator->validated();
+              if($client){
+                 $client->update($data);
+                 return response()->json([
+                     'success'=>1,
+                     'message' => 'Client updated successfully',
+                     'client' => $client
+                 ], 201);
+             }
+             return response()->json([
+                'success'=>0,
+                'message' => 'Client Not Found',
+            ], 404);
+        } catch (\Throwable $th) {
+            return response()->json(
+                [
+                    'success'=>0,
+                    'message' => 'Something went wrong', 
+                    'details' => $th->getMessage()
+                ], 500);
+        }
+    }
+
     public function removeClient(Request $request){
         try {
             //code...
@@ -105,5 +219,4 @@ class ClientControllerController extends Controller
             return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
         }
     }
-
 }

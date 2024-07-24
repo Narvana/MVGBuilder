@@ -5,16 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Plot extends Model
+class PlotTransaction extends Model
 {
     use HasFactory;
+    protected $table = 'plot_transactions'; 
+
     protected $fillable=[
-        'site_id',
-        'plot_No',
-        'plot_type',
-        'plot_area',
-        'price_from',
-        'price_to',
-        'plot_status'
+        'transaction_id',
+        'amount',
+        'plot_sale_id',
+        'payment_method'
     ];
 }

@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plot;
+use App\Models\PlotTransaction;
+use App\Models\Plot_Sale;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -23,7 +27,6 @@ class PlotController extends Controller
                 'plot_area' =>  $plot ? 'nullable|string' : 'required|string',
                 'price_from' =>  $plot ? 'nullable|integer' : 'required|integer',
                 'price_to' =>  $plot ? 'nullable|integer' : 'required|integer',            
-                'price_status' => $plot ? 'nullable|string' : 'required|string',
             ]);
     
             if ($validator->fails()) {
@@ -100,6 +103,119 @@ class PlotController extends Controller
         }catch (\Throwable $th) {
             return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
         }
+    }
+
+    public function PlotTransaction(Request $request)
+    {
+        try {
+            // Validate request data
+            $validator = Validator::make($request->all(), [
+                'plot_sale_id' => 'required|integer',
+                'amount' => 'required|integer|min:0',
+                'payment_method' => 'required|string'
+            ]);
+        
+            if ($validator->fails()) {
+                $errors = $validator->errors()->all(); // Get all error messages
+                return response()->json([
+                    'success' => 0,
+                    'errors' => $errors
+                ], 422);
+            }
+        
+            $data = $validator->validated();
+        
+            $plot_sale = Plot_Sale::findOrFail($data['plot_sale_id']);
+
+            $plot = Plot::where('id',$plot_sale->plot_id)->first();
+
+            if ($plot_sale->plot_status === 'COMPLETED') 
+            {
+                return response()->json([
+                    'success' => 0,
+                    'message' => 'No Payment Pending'
+                ], 200);
+            }
+            else
+            {
+                $transaction_id = 'MVG' . Str::random(10);
+        
+                // Check if there's an existing transaction
+                $existingTransaction = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])->exists();
+            
+                // If no existing transaction, validate amount and create a new transaction
+                if (!$existingTransaction) {
+                    if ($data['amount'] > $plot_sale->totalAmount) {
+                        return response()->json([
+                            'success' => 0,
+                            'message' => "Amount should not be greater than {$plot_sale->totalAmount}"
+                        ], 400);
+                    }
+            
+                    $newTransaction = PlotTransaction::create([
+                        'plot_sale_id' => $data['plot_sale_id'],
+                        'transaction_id' => $transaction_id,
+                        'amount' => $data['amount'],
+                        'payment_method' => $data['payment_method']
+                    ]);
+                } else {
+                    // Validate payment amount if there's already an existing transaction
+                    $amountPaid = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])
+                        ->sum(DB::raw('CAST(amount AS UNSIGNED)'));
+            
+                    $remainingAmount = $plot_sale->totalAmount - $amountPaid;
+            
+                    if ($data['amount'] > $remainingAmount) {
+                        return response()->json([
+                            'success' => 0,
+                            'message' => "Amount paid so far: {$amountPaid}. Payment should not be greater than {$remainingAmount}"
+                        ], 400);
+                    }
+            
+                    // Create a new transaction record
+                    $newTransaction = PlotTransaction::create([
+                        'plot_sale_id' => $data['plot_sale_id'],
+                        'transaction_id' => $transaction_id,
+                        'amount' => $data['amount'],
+                        'payment_method' => $data['payment_method']
+                    ]);
+                }
+            
+                // Calculate the total amount paid and determine the plot status
+                $amountPaid = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])
+                    ->sum(DB::raw('CAST(amount AS UNSIGNED)'));
+            
+                $percentagePaid = round(($amountPaid / $plot_sale->totalAmount) * 100, 2);
+            
+                $status = $percentagePaid < 30 ? 'PENDING' :
+                          ($percentagePaid < 100 ? 'BOOKED' : 'COMPLETED');
+            
+                // Update plot sale and plot status
+                $plot_sale->update([
+                    'plot_status' => $status,
+                    'plot_value' => $percentagePaid
+                ]);
+            
+                $plot->update([
+                    'plot_status' => $status
+                ]);
+            
+                return response()->json([
+                    'success' => 1,
+                    'message' => 'Transaction Added',
+                    'transaction' => $newTransaction,
+                    'plot_sale' => $plot_sale,
+                    'plot' => $plot
+                ], 201);        
+            } 
+
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => 0,
+                'message' => 'Something went wrong',
+                'details' => $th->getMessage()
+            ], 500);
+        }        
     }
 
 }
