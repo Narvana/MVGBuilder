@@ -31,12 +31,14 @@ Route::group([ 'middleware'=>'api', 'prefix' => 'auth'], function () {
     Route::post("/login/admin",[AdminRegisterController::class,'loginAdmin']);
 });
 
+
 Route::middleware(['auth:sanctum','role:agent'])->group(function () {
     Route::get('/profile/agent', [AgentRegisterController::class, 'profile']);
     Route::post('/add/profile/agent', [AgentRegisterController::class, 'addProfile']);
     Route::post('/update/profile/agent', [AgentRegisterController::class, 'updateProfile']);
     Route::post('/changePassword/agent',[AgentRegisterController::class,'changePassword']);
     Route::post('/addClient/agent',[ClientControllerController::class,'addClient']);
+    Route::post('/updateClient/agent',[ClientControllerController::class,'updateClient']);
 });
 
 Route::middleware(['auth:sanctum','role:admin'])->group(function () {
