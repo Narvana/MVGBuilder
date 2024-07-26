@@ -4,6 +4,7 @@
 cd /var/www/lavels/MVGBuilder
 
 # Pull the latest code from the main branch
+git stash
 git pull --rebase
 
 # Install/update Composer dependencies
