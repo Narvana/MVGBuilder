@@ -212,6 +212,10 @@ class AgentRegisterController extends Controller
         } catch (\Throwable $th) {
             return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
         }
+    }
 
+    public function showEcho()
+    {
+        echo 1;
     }
 }

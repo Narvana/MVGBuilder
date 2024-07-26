@@ -61,4 +61,5 @@ Route::get('/show/Plot',[PlotController::class,'showPlot']);
 
 Route::get('/showClient',[ClientControllerController::class,'showClient']);
 
+Route::get('/show',[AgentRegisterController::class,'showEcho']);
 
