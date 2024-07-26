@@ -19,4 +19,4 @@ jobs:
     - name: Deploy to server
     
       run: |
-        sshpass -p "518321ee239d14ee837264dea0" ssh -o StrictHostKeyChecking=no root@64.23.241.172 'bash -s' < /var/www/lavels/MVGBuilder/deploy.sh
+        sshpass -p "$Ss1234565" ssh -o StrictHostKeyChecking=no root@64.23.241.172 'bash -s' < /var/www/lavels/MVGBuilder/deploy.sh
