@@ -20,4 +20,4 @@ jobs:
       env:
         SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
       run: |
-        sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no user@your_server_ip 'bash -s' < /path/to/your/deploy.sh
+        sshpass -p "9537607d94aae738bb630b4c91" ssh -o StrictHostKeyChecking=no user@your_server_ip 'bash -s' < /path/to/your/deploy.sh
