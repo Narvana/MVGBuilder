@@ -15,6 +15,9 @@ jobs:
 
     - name: Install sshpass
       run: sudo apt-get install -y sshpass
+    - name: Debug output
+      run: |
+          set -x
 
     - name: Deploy to server
     
