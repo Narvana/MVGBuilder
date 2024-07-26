@@ -10,7 +10,7 @@ git pull --rebase
 composer update 
 
 # Run database migrations
-php artisan migrate --force
+# php artisan migrate --force
 
 # Clear and cache configuration
 php artisan config:cache
