@@ -22,5 +22,5 @@ jobs:
     - name: Deploy to server
     
       run: |
-        sshpass -p "27ff601697a5b09faa646c464b" ssh -o StrictHostKeyChecking=no root@64.23.241.172 'bash -s' < deploy.sh
+        sshpass -p "Ss123456" ssh -o StrictHostKeyChecking=no root@64.23.241.172 'bash -s' < deploy.sh
         deploy.sh
