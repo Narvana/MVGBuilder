@@ -33,6 +33,7 @@ Route::group([ 'middleware'=>'api', 'prefix' => 'auth'], function () {
 
 
 Route::middleware(['auth:sanctum','role:agent'])->group(function () {
+  
     Route::get('/profile/agent', [AgentRegisterController::class, 'profile']);
    
     Route::post('/add/profile/agent', [AgentRegisterController::class, 'addProfile']);
@@ -73,4 +74,6 @@ Route::get('/show/Plot',[PlotController::class,'showPlot']);
 Route::get('/show/Client',[ClientControllerController::class,'showClient']);
 
 Route::get('/show/Plot/Sales',[PlotController::class,'showPlotSales']);
+
+Route::get('/show/Agents',[AgentRegisterController::class,'showAllAgent']);
 

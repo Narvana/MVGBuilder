@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\AgentRegister;
 use App\Models\AgentProfile;
-use App\Http\Controllers\Controller;
 use App\Models\AgentLevels;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -375,5 +375,21 @@ class AgentRegisterController extends Controller
             ];
         }
         return response()->json($agentsHierarchy);   
+    }
+
+    public function showAllAgent(Request $request)
+    {
+        $agents = AgentRegister::where('referral_code','!=', "0")->get();
+        if($agents->isEmpty()){
+            return response()->json(['success'=>0,'message'=>'No Agent Found'],404);
+        }
+        foreach($agents as $agent){
+            $agentLevel=AgentLevels::where('agent_id',$agent->id)->first();
+            $allAgents[] = [
+                'agent' => $agent,
+                'level' => $agentLevel->level,
+             ];
+        }
+        return response()->json(['success'=>1,'Agents'=>$allAgents]);
     }
 }
