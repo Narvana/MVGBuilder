@@ -34,11 +34,21 @@ Route::group([ 'middleware'=>'api', 'prefix' => 'auth'], function () {
 
 Route::middleware(['auth:sanctum','role:agent'])->group(function () {
     Route::get('/profile/agent', [AgentRegisterController::class, 'profile']);
+   
     Route::post('/add/profile/agent', [AgentRegisterController::class, 'addProfile']);
+   
     Route::post('/update/profile/agent', [AgentRegisterController::class, 'updateProfile']);
+   
     Route::post('/changePassword/agent',[AgentRegisterController::class,'changePassword']);
+   
     Route::post('/addClient/agent',[ClientControllerController::class,'addClient']);
+
     Route::post('/updateClient/agent',[ClientControllerController::class,'updateClient']);
+   
+    Route::get('/level', [AgentRegisterController::class, 'showLevel']);
+
+    Route::get('/down/level', [AgentRegisterController::class, 'showSingleLevel']);
+
 });
 
 Route::middleware(['auth:sanctum','role:admin'])->group(function () {
@@ -46,6 +56,7 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
     Route::post('/add/Site',[SiteController::class,'addSite']);
 
     Route::delete('/remove/Site',[SiteController::class,'removeSite']);
+
     Route::post('/add/Plot',[PlotController::class,'addPlot']);
 
     Route::delete('/remove/Plot',[PlotController::class,'removePlot']);
@@ -59,7 +70,7 @@ Route::get('/show/Site',[SiteController::class,'showSite']);
 
 Route::get('/show/Plot',[PlotController::class,'showPlot']);
 
-Route::get('/showClient',[ClientControllerController::class,'showClient']);
+Route::get('/show/Client',[ClientControllerController::class,'showClient']);
 
-Route::get('/show',[AgentRegisterController::class,'showEcho']);
+Route::get('/show/Plot/Sales',[PlotController::class,'showPlotSales']);
 

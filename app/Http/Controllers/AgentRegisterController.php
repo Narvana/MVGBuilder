@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\AgentRegister;
 use App\Models\AgentProfile;
 use App\Http\Controllers\Controller;
+use App\Models\AgentLevels;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -23,6 +25,7 @@ class AgentRegisterController extends Controller
                 'min:8',
                 'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/'
             ],
+            'code'=>'required|string'
         ]);
 
         if ($validator->fails()) {
@@ -39,19 +42,89 @@ class AgentRegisterController extends Controller
             ], 422);
         }
 
+        $agent_id=AgentRegister::where('referral_code',$request->code)->first();
+        $agent_level=AgentLevels::where('agent_id',$agent_id->id)->first();
+        if(!$agent_id)
+        {
+            return response()->json(['success'=>0,'message'=>'Enter a correct referral code']);
+        }
+        if($agent_level?->level==="10")
+        {
+            return response()->json(['success'=>0,'message'=>"Can't register"]);
+        }
+
+        $code= substr($request->fullname, 0, 3) . Str::random(10);
+
         $agent = AgentRegister::create([
             'fullname' => $request->fullname,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'referral_code'=>$code
         ]);
         try {
+            if(!$agent)
+            {
+                return response()->json([
+                    'success' => 0,
+                    'message' => 'Agent Not Registered. Call to Support System'
+                ],400);
+            }
+
             $agent->assignRole('agent');
-            return response()->json(['success' => 1, 'data' => $agent], 201);
+
+            if($agent_id->referral_code === "0")
+            {
+                $level = 1 ;
+            }
+            else if($agent_level->level === "1" )
+            {
+                $level=2;
+            }
+            else if($agent_level->level=== "2")
+            {
+                $level= "3";
+            }
+            else if($agent_level->level=== "3")
+            {
+                $level= "4";
+            }
+            else if($agent_level->level==="4")
+            {
+                $level="5";
+            }
+            else if($agent_level->level==="5")
+            {
+                $level="6";
+            }
+            else if($agent_level->level==="6")
+            {
+                $level="7";
+            }
+            else if($agent_level->level==="7")
+            {
+                $level="8";
+            }
+            else if($agent_level->level==="8")
+            {
+                $level="9";
+            }
+            else if($agent_level->level==="9")
+            {
+                $level="10";
+            }
+            // else if{
+
+            // }
+
+            $level=AgentLevels::create([
+                'parent_id'=>$agent_id->id,
+                'agent_id'=>$agent->id,
+                'level'=> $level,
+            ]);
+            return response()->json(['success' => 1, 'data' => $agent,'level'=>$level], 201);
         } catch (\Exception $e) {
             return response()->json(['success' => 0, 'message' => 'Role assignment failed', 'error' => $e->getMessage()], 500);
         }
-    
-
     }
 
     public function loginAgent(Request $request)
@@ -81,10 +154,17 @@ class AgentRegisterController extends Controller
         }   
 
         $agent = AgentRegister::where('email', $request->email)->first();
+        if(!$agent)
+        {
+            return response()->json([
+                'success' => 0,
+                'message' => 'Email don\'t exist'
+            ], 401);
+        }
         if (!$agent->hasRole('agent')) 
             {
                 // User has the 'admin' role
-                return response()->json(['error' => 'Unauthorized Login Role. Only Agent can Login'], 401);  
+                return response()->json(['success'=>0,'error' => 'Unauthorized Login Role. Only Agent can Login'], 401);  
             }
         if ($agent && Hash::check($request->password, $agent->password)) {
             // Create a token for the user
@@ -178,15 +258,30 @@ class AgentRegisterController extends Controller
     {
         try {
             //code...
+            $agent=Auth::guard('sanctum')->user(); 
+
             $validator=Validator::make($request->all(),[
-                'password'=>  [
+                'oldPassword'=>[
+                    'required',
+                    'string',
+                    'min:8',
+                    'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/'
+                ],
+                'newPassword'=>  [
+                    'required',
+                    'string',
+                    'min:8',
+                    'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/'
+                ],
+                'verifyPassword'=>[
                     'required',
                     'string',
                     'min:8',
                     'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/'
                 ],
             ]);
-    
+
+            
             if ($validator->fails()) {
                 $errors = $validator->errors()->all(); // Get all error messages
                 $formattedErrors = [];
@@ -199,23 +294,86 @@ class AgentRegisterController extends Controller
                     'errors' => $formattedErrors
                 ], 422);
             }   
-            $agent=Auth::user();
+
             if(!$agent){
                 return response()->json([
                     'success' => 0,
                     'message' => 'Agent Not Found'
                 ], 404);
             }
-            $agent->password=Hash::make($request->password);
-            $agent->save();
-            return response()->json(['success'=>1, 'message' => 'Password Updated'], 201);
+            else{
+                if($agent && Hash::check($request->oldPassword, $agent->password))
+                {
+                    if($request->newPassword === $request->verifiyPassword)
+                    {
+                        $agent->password=Hash::make($request->newPassword);
+                        $agent->save();
+                        return response()->json(['success'=>1, 'message' => 'Password Updated'], 201);
+                    }
+                    else{
+                        return response()->json(['success'=>0, 'message' => 'New Password and Verify Password should match each other'], 400);                        
+                    }
+                }
+                return response()->json(['success'=>0, 'message' => 'Old Password Don\'t Matchs'], 400);
+            }
+
         } catch (\Throwable $th) {
             return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
         }
     }
 
-    public function showEcho()
+      public function showLevel(Request $request)
     {
-        echo 1;
+        $user=Auth::guard('sanctum')->user();
+        // if ($user->referral_code === "0") {
+            // Fetch agents at level 1
+        $level1Agents = AgentLevels::where('parent_id', $user->id)->get();
+        
+            foreach ($level1Agents as $agent) {
+                $agentsHierarchy[] = [
+                    'level' => $agent->level,
+                    'agent' => AgentRegister::where('id', $agent->agent_id)->first(),
+                    'down' => (AgentLevels::where('parent_id', $agent->agent_id )->get()) ? $this->fetchDownAgents($agent->agent_id, $agent->level+1) : []
+                ];
+            }
+               return response()->json($agentsHierarchy);
+    }
+
+    private function fetchDownAgents($parentId, $level) {
+        $agents = AgentLevels::where('parent_id', $parentId)->get();
+        $result = [];
+
+            foreach ($agents as $agent) {
+                $result[] = [
+                    'level' =>  $agent->level,
+                    'agent' => AgentRegister::where('id', $agent->agent_id)->first(),
+                    'down' =>(AgentLevels::where('parent_id', $agent->agent_id )->get()) ? $this->fetchDownAgents($agent->agent_id, $agent->level+1) : []
+                ];
+            }        
+            return $result;
+    }
+
+    public function showSingleLevel(Request $request)
+    {
+
+        $user=Auth::guard('sanctum')->user();
+
+
+        $params=$request->query('parent_id');
+
+        $level1Agents = AgentLevels::where('parent_id', $params ?? $user->id)->get();
+
+        if($level1Agents->isEmpty())
+        {
+            return response()->json(['success'=>0,'message'=>'Data Not Found'],404);
+        }
+
+        foreach ($level1Agents as $agent) {
+            $agentsHierarchy[] = [
+                'level'=>$agent->level,
+                'agent' => AgentRegister::where('id', $agent->agent_id)->first(),
+            ];
+        }
+        return response()->json($agentsHierarchy);   
     }
 }

@@ -218,4 +218,12 @@ class PlotController extends Controller
         }        
     }
 
+    public function showPlotSales(Request $request)
+{
+    $sales = DB::table('plot_sales')->get();
+    return response()->json(['success'=>1 ,'sales'=>$sales]);
 }
+
+}
+
+

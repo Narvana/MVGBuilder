@@ -80,10 +80,17 @@ class AdminRegisterController extends Controller
         }   
 
         $admin = AdminRegister::where('email', $request->email)->first();
+        if(!$admin)
+        {
+            return response()->json([
+                'success' => 0,
+                'message' => 'Email don\'t exist'
+            ], 401);
+        }
         if (!$admin->hasRole('admin')) 
         {
             // User has the 'admin' role
-            return response()->json(['error' => 'Unauthorized Login Role. Only Admin can Login'], 401);  
+            return response()->json(['success'=>0,'error' => 'Unauthorized Login Role. Only Admin can Login'], 401);  
         }
         if ($admin && Hash::check($request->password, $admin->password)) {
             // Create a token for the user
@@ -95,7 +102,6 @@ class AdminRegisterController extends Controller
                 'token' => $token
             ], 200);
         }
-    
         return response()->json([
             'success' => 0,
             'message' => 'Invalid credentials or Wrong Password'
@@ -116,6 +122,5 @@ class AdminRegisterController extends Controller
             'success' => 1,
             'admin' => $admin,
         ], 200);
-    }
-
+    }   
 }

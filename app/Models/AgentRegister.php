@@ -18,6 +18,7 @@ class AgentRegister extends Model
     protected $fillable=[
         'fullname',
         'email',
-        'password'
+        'password',
+        'referral_code'
     ];
 }
