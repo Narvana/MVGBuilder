@@ -65,6 +65,8 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
     Route::delete('remove/Client',[ClientControllerController::class,'removeClient']);
     // 
     Route::post('/plot/transaction',[PlotController::class,'PlotTransaction']);
+
+    Route::delete('remove/Agent',[AgentRegisterController::class,'removeAgent']);
 });
 
 Route::get('/show/Site',[SiteController::class,'showSite']);

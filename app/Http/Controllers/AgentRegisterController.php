@@ -210,6 +210,36 @@ class AgentRegisterController extends Controller
         ], 200);
     }
 
+    public function removeAgent(Request $request)
+    {
+        $params=$request->query('id');
+
+        try {
+            $agent = AgentRegister::find($params);
+    
+            if (!$agent) {
+                return response()->json([
+                    'success' => 0,
+                    'message' => 'Agent Not Found'
+                ], 404);
+            }
+    
+            $agent->delete();
+    
+            return response()->json([
+                'success' => 1,
+                'message' => 'Agent Removed'
+            ], 200);
+    
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => 0,
+                'message' => 'An error occurred while trying to remove the agent',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function addProfile(Request $request){
         $agent = Auth::user();
         $agent_profile=AgentProfile::where('agent_id',$agent->id)->first();
@@ -217,7 +247,6 @@ class AgentRegisterController extends Controller
             'agent_id' => $agent_profile ? 'nullable|integer|exists:agent_registers,id' : 'required|integer|exists:agent_registers,id',
             'designation' => $agent_profile ? 'nullable|string' : 'required|string',
             'description' =>  $agent_profile ? 'nullable|string' : 'required|string',
-            'contact_no' =>  $agent_profile ? 'nullable|string|min:10|max:10' : 'required|string|min:10|max:10',
             'address'=>  $agent_profile ? 'nullable|string' : 'required|string' 
         ]);
 
@@ -235,7 +264,7 @@ class AgentRegisterController extends Controller
             ], 422);
         }   
 
-        $profile=$request->only(['designation','description','contact_no','address']);
+        $profile=$request->only(['designation','description','address']);
         if($agent_profile){
             if(isset( $request->fullname))
             {
@@ -255,7 +284,6 @@ class AgentRegisterController extends Controller
          'agent_id'=>$agent->id,
          'designation'=>$profile['designation'],
          'description'=>$profile['description'],
-         'contact_no'=>$profile['contact_no'],
          'address' => $profile['address'],
         ]);
         return response()->json(['success'=>1, 'message' => 'Profile created successfully', 'profile' => $agentprofile, 'agent'=>$agent], 201);
