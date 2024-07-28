@@ -58,15 +58,13 @@ class AgentRegisterController extends Controller
 
         $code= substr($request->fullname, 0, 3) . Str::random(10);
 
-        $agent = AgentRegister::create(
-            [
+        $agent = AgentRegister::create([
             'fullname' => $request->fullname,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'referral_code' => $code,
             'contact_no' => $request->contact_no,
             'pancard_no' => $request->pancard_no,
-            // ''
         ]);
         try {
             if(!$agent)
@@ -175,7 +173,8 @@ class AgentRegisterController extends Controller
             }
         if ($agent && Hash::check($request->password, $agent->password)) {
             // Create a token for the user
-            $token = $agent->createToken('auth-token')->plainTextToken;
+            $token = $agent->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
+            // createToken('auth-token')->plainTextToken;
 
             return response()->json([
                 'success' => 1,
