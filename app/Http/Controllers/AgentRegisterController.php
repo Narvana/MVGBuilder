@@ -392,20 +392,20 @@ class AgentRegisterController extends Controller
 
         $user=Auth::guard('sanctum')->user();
 
-
         $params=$request->query('parent_id');
 
-        $level1Agents = AgentLevels::where('parent_id', $params ?? $user->id)->get();
+        $level1Agents = AgentLevels::where('parent_id', $params ?? $user->id)->with('agent')->get();
 
         if($level1Agents->isEmpty())
         {
             return response()->json(['success'=>0,'message'=>'Data Not Found'],404);
         }
 
-        foreach ($level1Agents as $agent) {
+        foreach ($level1Agents as $agentLevel) {
             $agentsHierarchy[] = [
-                'level'=>$agent->level,
-                'agent' => AgentRegister::where('id', $agent->agent_id)->first(),
+                'level'=>$agentLevel->level,
+                'agent' =>$agentLevel->agent
+                //  AgentRegister::where('id', $agent->agent_id)->first(),
             ];
         }
         return response()->json($agentsHierarchy);   

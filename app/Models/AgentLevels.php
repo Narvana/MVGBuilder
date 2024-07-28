@@ -13,4 +13,10 @@ class AgentLevels extends Model
         'agent_id',
         'level'
     ];
+
+    public function agent()
+    {
+        return $this->belongsTo(AgentRegister::class, 'agent_id');
+    }
+    
 }
