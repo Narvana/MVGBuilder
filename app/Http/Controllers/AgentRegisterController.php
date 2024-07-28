@@ -16,18 +16,20 @@ class AgentRegisterController extends Controller
 {
     //
     public function registerAgent(Request $request){
-        $validator=Validator::make($request->all(),[
+        $validator = Validator::make($request->all(), [
             'fullname' => 'required|string',
-            'email' => 'required|string|email|unique:agent_registers',
+            'email' => 'required|string|email|unique:agent_registers,email',
             'password' => [
                 'required',
                 'string',
                 'min:8',
-                'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/'
+                'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/',
             ],
-            'code'=>'required|string'
+            'pancard_no' => 'required|string|unique:agent_registers,pancard_no',
+            'contact_no' => 'required|string|unique:agent_registers,contact_no',
+            'code' => 'required|string',
         ]);
-
+        
         if ($validator->fails()) {
             $errors = $validator->errors()->all(); // Get all error messages
             $formattedErrors = [];
@@ -42,6 +44,7 @@ class AgentRegisterController extends Controller
             ], 422);
         }
 
+
         $agent_id=AgentRegister::where('referral_code',$request->code)->first();
         $agent_level=AgentLevels::where('agent_id',$agent_id->id)->first();
         if(!$agent_id)
@@ -50,16 +53,20 @@ class AgentRegisterController extends Controller
         }
         if($agent_level?->level==="10")
         {
-            return response()->json(['success'=>0,'message'=>"Can't register"]);
+            return response()->json(['success'=>0,'message'=>"You don't have the access to register New Agent"]);
         }
 
         $code= substr($request->fullname, 0, 3) . Str::random(10);
 
-        $agent = AgentRegister::create([
+        $agent = AgentRegister::create(
+            [
             'fullname' => $request->fullname,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'referral_code'=>$code
+            'referral_code' => $code,
+            'contact_no' => $request->contact_no,
+            'pancard_no' => $request->pancard_no,
+            // ''
         ]);
         try {
             if(!$agent)

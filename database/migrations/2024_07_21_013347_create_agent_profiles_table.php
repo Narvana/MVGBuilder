@@ -16,7 +16,6 @@ return new class extends Migration
             $table->unsignedBigInteger('agent_id');
             $table->string('designation');
             $table->text('description');
-            $table->string('contact_no');
             $table->string('address',500);
             $table->timestamps();
 
