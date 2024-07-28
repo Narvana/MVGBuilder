@@ -173,7 +173,7 @@ class AgentRegisterController extends Controller
             }
         if ($agent && Hash::check($request->password, $agent->password)) {
             // Create a token for the user
-            $token = $agent->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
+            $token = $agent->createToken('agent-token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
             // createToken('auth-token')->plainTextToken;
 
             return response()->json([

@@ -94,7 +94,8 @@ class AdminRegisterController extends Controller
         }
         if ($admin && Hash::check($request->password, $admin->password)) {
             // Create a token for the user
-            $token = $admin->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToke;
+
+            $token = $admin->createToken('admin-token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
 
             return response()->json([
                 'success' => 1,
