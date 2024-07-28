@@ -14,7 +14,12 @@ class AgentRegister extends Model
     use HasApiTokens,HasRoles,HasFactory,Notifiable;
 
     protected $guard_name = 'api';
-    
+
+    public function agentLevel()
+    {
+        return $this->hasOne(AgentLevels::class, 'agent_id');
+    }
+
     protected $fillable=[
         'fullname',
         'email',

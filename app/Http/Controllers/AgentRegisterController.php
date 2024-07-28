@@ -413,16 +413,20 @@ class AgentRegisterController extends Controller
 
     public function showAllAgents(Request $request)
     {
-        $agents = AgentRegister::where('referral_code','!=', "0")->get();
+        // $agents = AgentRegister::where('referral_code','!=', "0")->get();
+        $agents = AgentRegister::where('referral_code', '!=', "0")
+        ->with('agentLevel')
+        ->get();
+        
         if($agents->isEmpty()){
             return response()->json(['success'=>0,'message'=>'No Agent Found'],404);
         }
 
         foreach($agents as $agent){
-            $agentLevel=AgentLevels::where('agent_id',$agent->id)->first();
+            // $agentLevel=AgentLevels::where('agent_id',$agent->id)->first();
                 $allAgents[] = [
                     'agent' => $agent,
-                    'level' => $agentLevel ? $agentLevel->level : null,
+                    'level' => $agent->agentLevel ? $agent->agentLevel->level : null,
                 ];
         }
         return response()->json(['success'=>1,'Agents'=>$allAgents]);
