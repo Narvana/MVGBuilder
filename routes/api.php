@@ -75,5 +75,5 @@ Route::get('/show/Client',[ClientControllerController::class,'showClient']);
 
 Route::get('/show/Plot/Sales',[PlotController::class,'showPlotSales']);
 
-Route::get('/show/Agents',[AgentRegisterController::class,'showAllAgent']);
+Route::get('/show/Agents',[AgentRegisterController::class,'showAllAgents']);
 

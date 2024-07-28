@@ -377,7 +377,7 @@ class AgentRegisterController extends Controller
         return response()->json($agentsHierarchy);   
     }
 
-    public function showAllAgent(Request $request)
+    public function showAllAgents(Request $request)
     {
         $agents = AgentRegister::where('referral_code','!=', "0")->get();
         if($agents->isEmpty()){
