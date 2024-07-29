@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\AgentIncome;
+use App\Models\AgentLevels;
+use App\Models\AgentRegister;
 use App\Models\Plot;
 use App\Models\PlotTransaction;
 use App\Models\Plot_Sale;
@@ -190,7 +193,6 @@ class PlotController extends Controller
                 $status = $percentagePaid < 30 ? 'PENDING' :
                           ($percentagePaid < 100 ? 'BOOKED' : 'COMPLETED');
             
-                // Update plot sale and plot status
                 $plot_sale->update([
                     'plot_status' => $status,
                     'plot_value' => $percentagePaid
@@ -199,7 +201,61 @@ class PlotController extends Controller
                 $plot->update([
                     'plot_status' => $status
                 ]);
-            
+                
+                if($plot_sale->plot_status === 'BOOKED')
+                {
+                    $CheckIncome=AgentIncome::where('plot_sale_id',$data['plot_sale_id'])->first();
+                    if(!$CheckIncome)
+                    {
+                        $seller_id=$plot_sale->agent_id;
+                    
+                        $total_amount = $plot_sale->totalAmount; 
+    
+                        $agentLevel=AgentLevels::where('agent_id',$seller_id)->first();
+    
+                        $currentLevel=$agentLevel->level;
+    
+                        $incomePercentages = [
+                            "1" => 8,
+                            "2" => 3,
+                            "3" => 2,
+                            "4" => 1,
+                            "5" => 1,
+                            "6" =>0.70,
+                            "7" => 0.60,
+                            "8" => 0.40,
+                            "9" => 0.20,
+                            "10" =>0.10
+                        ];
+                        
+                        // $levelTables=AgentLevels::get()
+                        while ($agentLevel) {
+    
+                            $total_income = ($incomePercentages[$currentLevel] / 100) * $total_amount;
+                            $pancard= AgentRegister::find($agentLevel->agent_id);
+                            AgentIncome::create([
+                                'plot_sale_id' => $plot_sale->id, 
+                                'final_agent' => $agentLevel->agent_id,
+                                'total_income' => $total_income,
+                                'tds_deduction' => $total_income * 0.05,  // Assuming a TDS of 5%
+                                'final_income' => $total_income - ($total_income * 0.05),
+                                'pancard_status' => $pancard->pancard_no ? 1 : 0 ,  // Assuming you have this value
+                            ]);
+    
+                            $parentID = $agentLevel->parent_id;
+                    
+                            $agentExist = AgentLevels::where('agent_id', $parentID)->first();
+                    
+                            if ($agentExist) {
+                                $agentLevel = $agentExist;
+                                $currentLevel=$agentLevel->level;
+                            } else {
+                                // Stop the execution if the parent ID does not exist
+                                break;
+                            }
+                        }                                     
+                    }                    
+                }
                 return response()->json([
                     'success' => 1,
                     'message' => 'Transaction Added',
@@ -208,7 +264,6 @@ class PlotController extends Controller
                     'plot' => $plot
                 ], 201);        
             } 
-
         } catch (\Throwable $th) {
             return response()->json([
                 'success' => 0,
