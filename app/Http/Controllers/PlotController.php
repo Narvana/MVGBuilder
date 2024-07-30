@@ -274,10 +274,36 @@ class PlotController extends Controller
     }
 
     public function showPlotSales(Request $request)
-{
-    $sales = DB::table('plot_sales')->get();
-    return response()->json(['success'=>1 ,'sales'=>$sales]);
-}
+    {
+        // $sales = DB::table('plot_sales')->get();
+        $sales = DB::table('plot_sales')
+            ->leftJoin('plots', 'plot_sales.plot_id', '=', 'plots.id')
+            ->leftJoin('client_controllers', 'plot_sales.client_id', '=', 'client_controllers.id')
+            ->leftJoin('agent_registers', 'plot_sales.agent_id', '=', 'agent_registers.id')
+            ->select(
+                    // 'plot_sales.*',
+                    'plot_sales.id', 
+                    // 'plot_sales.plot_id', 
+                    'plots.plot_No',
+                    // 'plots.plot_type',
+                    // 'plots.plot_area',
+                    // 'plots.plot_status',// Replace 'plot_info' with the actual column name you want from the plots table
+                    // 'plot_sales.client_id', 
+                    'client_controllers.client_name',  // Replace 'client_name' with the actual column name you want from the clients table
+                    // 'client_controllers.client_contact',
+                    // 'plot_sales.agent_id', 
+                    // 'agent_registers.fullname',
+                    // 'agent_registers.contact_no',
+                    // 'agent_registers.pancard_no', // Replace 'agent_name' with the actual column name you want from the agents table
+                    'plot_sales.totalAmount', 
+                    'plot_sales.plot_status', 
+                    'plot_sales.plot_value', 
+
+
+                )
+    ->get();
+        return response()->json(['success'=>1 ,'sales'=>$sales]);
+    }
 
 }
 
