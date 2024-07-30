@@ -285,8 +285,10 @@ class PlotController extends Controller
                     'plot_sales.id', 
                     // 'plot_sales.plot_id', 
                     'plots.plot_No',
-                    // 'plots.plot_type',
-                    // 'plots.plot_area',
+                    'plots.plot_type',
+                    'plots.plot_area',
+                    'plots.price_from',
+                    'plots.price_to',
                     // 'plots.plot_status',// Replace 'plot_info' with the actual column name you want from the plots table
                     // 'plot_sales.client_id', 
                     'client_controllers.client_name',  // Replace 'client_name' with the actual column name you want from the clients table
