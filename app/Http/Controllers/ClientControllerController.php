@@ -26,6 +26,7 @@ class ClientControllerController extends Controller
                 'client_state' => 'required|string',
                 'plot_id' => 'required|integer|unique:plot_sales',
                 'rangeAmount' => 'required|integer',
+                'initial_amount'=> 'required|integer'
             ]);
             
             if ($validator->fails()) {
@@ -62,7 +63,14 @@ class ClientControllerController extends Controller
                     'error' => "Amount should be between {$plot->price_from} and {$plot->price_to}",
                 ], 422);
             }
-            
+            if($data['initial_amount'] > $plot->price_to )
+            {
+                return response()->json([
+                    'success' => 0,
+                    'error' => "Initial Amount should Not be greater than {$plot->price_to}",
+                ], 422);
+            }
+
             if (!$client) {
                 $newClient = ClientController::create([
                     'client_name' => $data['client_name'],
@@ -101,6 +109,7 @@ class ClientControllerController extends Controller
                 'plot_id' => $data['plot_id'],
                 'client_id' => $clientId,
                 'agent_id' => $agent->id,
+                'initial_amount'=>$data['initial_amount'],
                 'totalAmount' => $totalAmount,
                 'plot_value' => 0.00
             ]);
