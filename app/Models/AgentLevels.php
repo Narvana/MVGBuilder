@@ -11,7 +11,8 @@ class AgentLevels extends Model
     protected $fillable=[
         'parent_id',
         'agent_id',
-        'level'
+        'level',
+        'referral'
     ];
 
     public function agent()

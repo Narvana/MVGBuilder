@@ -32,7 +32,7 @@ class AdminRegisterController extends Controller
             }
             return response()->json([
                 'success' => 0,
-                'errors' => $formattedErrors
+                'error' => $formattedErrors[0]
             ], 422);
         }
 
@@ -46,7 +46,7 @@ class AdminRegisterController extends Controller
         {
             return response()->json([
                 'success' => 0,
-                'message' => 'Admin Not Registered. Call to Support System'
+                'error' => 'Admin Not Registered. Call to Support System'
             ],400);
         }
         $admin->assignRole('admin');
@@ -75,7 +75,7 @@ class AdminRegisterController extends Controller
     
             return response()->json([
                 'success' => 0,
-                'errors' => $formattedErrors
+                'error' => $formattedErrors[0]
             ], 422);
         }   
 
@@ -84,7 +84,7 @@ class AdminRegisterController extends Controller
         {
             return response()->json([
                 'success' => 0,
-                'message' => 'Email don\'t exist'
+                'error' => 'Email don\'t exist'
             ], 401);
         }
         if (!$admin->hasRole('admin')) 
@@ -105,7 +105,7 @@ class AdminRegisterController extends Controller
         }
         return response()->json([
             'success' => 0,
-            'message' => 'Invalid credentials or Wrong Password'
+            'error' => 'Invalid credentials or Wrong Password'
         ], 401);
 
     }
@@ -116,7 +116,7 @@ class AdminRegisterController extends Controller
         if(!$admin){
             return response()->json([
                 'success' => 0,
-                'message'=>'Unauthorized, Admin Value not found',
+                'error'=>'Unauthorized, Admin Value not found',
             ]);
         }
         return response()->json([

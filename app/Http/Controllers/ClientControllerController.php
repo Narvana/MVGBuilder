@@ -29,9 +29,16 @@ class ClientControllerController extends Controller
             ]);
             
             if ($validator->fails()) {
+                $errors = $validator->errors()->all(); // Get all error messages
+                $formattedErrors = [];
+        
+                foreach ($errors as $error) {
+                    $formattedErrors[] = $error;
+                }
+    
                 return response()->json([
                     'success' => 0,
-                    'errors' => $validator->errors()->all()
+                    'error' => $formattedErrors[0]
                 ], 422);
             }
             
@@ -43,7 +50,7 @@ class ClientControllerController extends Controller
             if (!$plot) {
                 return response()->json([
                     'success' => 0,
-                    'message' => 'Plot not found',
+                    'error' => 'Plot not found',
                 ], 404);
             }
             
@@ -52,7 +59,7 @@ class ClientControllerController extends Controller
             if ($data['rangeAmount'] < $plot->price_from || $data['rangeAmount'] > $plot->price_to) {
                 return response()->json([
                     'success' => 0,
-                    'message' => "Amount should be between {$plot->price_from} and {$plot->price_to}",
+                    'error' => "Amount should be between {$plot->price_from} and {$plot->price_to}",
                 ], 422);
             }
             
@@ -68,7 +75,7 @@ class ClientControllerController extends Controller
                 if (!$newClient) {
                     return response()->json([
                         'success' => 0,
-                        'message' => 'Client Not Added',
+                        'error' => 'Client Not Added',
                     ], 500);
                 }
             
@@ -84,7 +91,7 @@ class ClientControllerController extends Controller
             if ($existingPlotSale) {
                 return response()->json([
                     'success' => 0,
-                    'message' => "Plot is already assigned to {$client->client_name}.",
+                    'error' => "Plot is already assigned to {$client->client_name}.",
                 ], 409);
             }
             
@@ -101,7 +108,7 @@ class ClientControllerController extends Controller
             if (!$plot_sale) {
                 return response()->json([
                     'success' => 0,
-                    'message' => 'Failed to create Plot Sale'
+                    'error' => 'Failed to create Plot Sale'
                 ], 500);
             }
             
@@ -112,7 +119,7 @@ class ClientControllerController extends Controller
             if (!$updateSuccess) {
                 return response()->json([
                     'success' => 0,
-                    'message' => 'Failed to update plot status',
+                    'error' => 'Failed to update plot status',
                 ], 500);
             }
             
@@ -125,7 +132,8 @@ class ClientControllerController extends Controller
             ], 201);
         } 
         catch (\Throwable $th) {
-            return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
+            return response()->json([
+            'success'=>0, 'error' => 'Internal Server Error' . $th->getMessage()], 500);
         }
     }
 
@@ -137,19 +145,19 @@ class ClientControllerController extends Controller
             $params=$request->query('id');
             if($clients->isEmpty())
             {
-                return response()->json(['success'=>0,'message'=>'No data Found'],404);
+                return response()->json(['success'=>0,'error'=>'No data Found'],404);
             }
             if($params){
                 $client = ClientController::find($params);
                 if(!$client)
                 {
-                    return response()->json(['success'=>0,'message'=>"No data Found, in id {$params}"],404);   
+                    return response()->json(['success'=>0,'error'=>"No data Found, in id {$params}"],404);   
                 }
                 return response()->json(['success'=>1,'client'=>$client],200);
             }
             return response()->json(['success'=>1,'clients'=>$clients],200);
         } catch (\Throwable $th) {
-            return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
+            return response()->json(['success'=>0, 'error' => 'Something went wrong. ' . $th->getMessage()], 500);
         }
     }
 
@@ -177,7 +185,7 @@ class ClientControllerController extends Controller
      
              return response()->json([
                  'success' => 0,
-                 'errors' => $formattedErrors
+                 'error' => $formattedErrors[0]
              ], 422);
          }
 
@@ -192,14 +200,13 @@ class ClientControllerController extends Controller
              }
              return response()->json([
                 'success'=>0,
-                'message' => 'Client Not Found',
+                'error' => 'Client Not Found',
             ], 404);
         } catch (\Throwable $th) {
             return response()->json(
                 [
-                    'success'=>0,
-                    'message' => 'Something went wrong', 
-                    'details' => $th->getMessage()
+                    'success'=>0, 
+                    'error' =>'Something went wrong. ' . $th->getMessage()
                 ], 500);
         }
     }
@@ -211,12 +218,14 @@ class ClientControllerController extends Controller
             $client = ClientController::find($params);
             if(!$client)
             {
-                return response()->json(['success'=>0,'message'=>"No data Found, in id {$params}"],404);
+                return response()->json(['success'=>0,'error'=>"No data Found, in id {$params}"],404);
             }
             $client->delete();
             return response()->json(['success'=>1,'message'=>'Client Removed'],200);
         }catch (\Throwable $th) {
-            return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
+            return response()->json([
+                'success'=>0,
+                'details' =>'Internal Server Error. ' . $th->getMessage()], 500);
         }
     }
 }

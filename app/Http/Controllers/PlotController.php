@@ -42,7 +42,7 @@ class PlotController extends Controller
         
                 return response()->json([
                     'success' => 0,
-                    'errors' => $formattedErrors
+                    'error' => $formattedErrors[0]
                 ], 422);
             }   
 
@@ -63,7 +63,7 @@ class PlotController extends Controller
                 'plot' => $newPlot
             ], 201);
         } catch (\Throwable $th) {
-            return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
+            return response()->json(['success'=>0,'details' => 'Internal Server Error. ' . $th->getMessage()], 500);
         }
     }
 
@@ -75,19 +75,19 @@ class PlotController extends Controller
             $params=$request->query('id');
             if($plots->isEmpty())
             {
-                return response()->json(['success'=>0,'message'=>'No data Found'],404);
+                return response()->json(['success'=>0,'error'=>'No data Found'],404);
             }
             if($params){
                 $plot = Plot::find($params);
                 if(!$plot)
                 {
-                    return response()->json(['success'=>0,'message'=>"No data Found, in id {$params}"],404);   
+                    return response()->json(['success'=>0,'error'=>"No data Found, in id {$params}"],404);   
                 }
                 return response()->json(['success'=>1,'plot'=>$plot],200);
             }
             return response()->json(['success'=>1,'plots'=>$plots],200);
         } catch (\Throwable $th) {
-            return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
+            return response()->json(['success'=>0, 'details' => 'Internal Server Error. ' . $th->getMessage()], 500);
         }
     }
 
@@ -99,12 +99,12 @@ class PlotController extends Controller
             $plot = Plot::find($params);
             if(!$plot)
             {
-                return response()->json(['success'=>0,'message'=>"No data Found, in id {$params}"],404);
+                return response()->json(['success'=>0,'error'=>"No data Found, in id {$params}"],404);
             }
             $plot->delete();
             return response()->json(['success'=>1,'message'=>'Plot Removed'],200);
         }catch (\Throwable $th) {
-            return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
+            return response()->json(['success'=>0,'details' => 'Internal Server Error.' . $th->getMessage()], 500);
         }
     }
 
@@ -120,11 +120,17 @@ class PlotController extends Controller
         
             if ($validator->fails()) {
                 $errors = $validator->errors()->all(); // Get all error messages
+                $formattedErrors = [];
+        
+                foreach ($errors as $error) {
+                    $formattedErrors[] = $error;
+                }
+        
                 return response()->json([
                     'success' => 0,
-                    'errors' => $errors
+                    'error' => $formattedErrors[0]
                 ], 422);
-            }
+            }   
         
             $data = $validator->validated();
         
@@ -135,7 +141,7 @@ class PlotController extends Controller
             if ($plot_sale->plot_status === 'COMPLETED') 
             {
                 return response()->json([
-                    'success' => 0,
+                    'success' => 1,
                     'message' => 'No Payment Pending'
                 ], 200);
             }
@@ -151,7 +157,7 @@ class PlotController extends Controller
                     if ($data['amount'] > $plot_sale->totalAmount) {
                         return response()->json([
                             'success' => 0,
-                            'message' => "Amount should not be greater than {$plot_sale->totalAmount}"
+                            'error' => "Amount should not be greater than {$plot_sale->totalAmount}"
                         ], 400);
                     }
             
@@ -171,7 +177,7 @@ class PlotController extends Controller
                     if ($data['amount'] > $remainingAmount) {
                         return response()->json([
                             'success' => 0,
-                            'message' => "Amount paid so far: {$amountPaid}. Payment should not be greater than {$remainingAmount}"
+                            'error' => "Amount paid so far: {$amountPaid}. Payment should not be greater than {$remainingAmount}"
                         ], 400);
                     }
             
@@ -267,8 +273,7 @@ class PlotController extends Controller
         } catch (\Throwable $th) {
             return response()->json([
                 'success' => 0,
-                'message' => 'Something went wrong',
-                'details' => $th->getMessage()
+                'error' => 'Internal Server Error. ' . $th->getMessage()
             ], 500);
         }        
     }
@@ -304,6 +309,12 @@ class PlotController extends Controller
 
                 )
     ->get();
+     if(!$sales){
+        return response()->json([
+            'success' => 0,
+            'error' => 'No Data Found'
+        ], 404);
+    }
         return response()->json(['success'=>1 ,'sales'=>$sales]);
     }
 
