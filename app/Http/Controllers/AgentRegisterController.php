@@ -422,7 +422,6 @@ class AgentRegisterController extends Controller
             $agentsHierarchy[] = [
                 'level'=>$agentLevel->level,
                 'agent' =>$agentLevel->agent
-                //  AgentRegister::where('id', $agent->agent_id)->first(),
             ];
         }
         return response()->json(['success'=>1, 'Map'=>$agentsHierarchy],200);   
@@ -453,19 +452,20 @@ class AgentRegisterController extends Controller
     {
         $user=Auth::guard('sanctum')->user();
         
-        $level1Agents = AgentLevels::where('referral', 'like', '%' . $user->referral_code . '%')->with('agent')->get();
+        $level1Agents = AgentLevels::where('referral', 'like', '%' . $user->referral_code . '%')->with('agent')->orderBy('level','asc')->get();
           
         if($level1Agents->isEmpty())
         {
             return response()->json(['success' => 0,'error' => 'Data Not Found'],404);
         }
-
+        
         foreach ($level1Agents as $agentLevel) {
             $agentsHierarchy[] = [
                 'level'=>$agentLevel->level,
                 'agent' =>$agentLevel->agent
             ];
         }
+
         return response()->json(['success'=>1,'downAgent'=>$agentsHierarchy]);
     }
 }
