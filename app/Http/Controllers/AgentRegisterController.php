@@ -46,6 +46,7 @@ class AgentRegisterController extends Controller
 
 
         $agent_id=AgentRegister::where('referral_code',$request->code)->first();
+
         $agent_level=AgentLevels::where('agent_id',$agent_id->id)->first();
         if(!$agent_id)
         {
@@ -56,16 +57,18 @@ class AgentRegisterController extends Controller
             return response()->json(['success'=>0,'message'=>"You don't have the access to register New Agent"]);
         }
 
-        $code= substr($request->fullname, 0, 3) . Str::random(10);
+        // $code= 'MVG' . 'L' . $agent_level->level + 1 . ;
+        // substr($request->fullname, 0, 3) . Str::random(10);
 
         $agent = AgentRegister::create([
             'fullname' => $request->fullname,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'referral_code' => $code,
+            'referral_code' => 1,
             'contact_no' => $request->contact_no,
             'pancard_no' => $request->pancard_no,
         ]);
+        
         try {
             if(!$agent)
             {
@@ -75,11 +78,18 @@ class AgentRegisterController extends Controller
                 ],400);
             }
 
+            $level = $agent_level ? intval($agent_level->level) + 1 : 1;
+            $code = 'MVG' . 'L' . $level . $agent->id;
+
+            $agent->update([
+                'referral_code' => $code,
+            ]);   
+
             $agent->assignRole('agent');
 
             if($agent_id->referral_code === "0")
             {
-                $level = 1 ;
+                $level = 1;
             }
             else if($agent_level->level === "1" )
             {
@@ -128,7 +138,7 @@ class AgentRegisterController extends Controller
             ]);
             return response()->json(['success' => 1, 'data' => $agent,'level'=>$level], 201);
         } catch (\Exception $e) {
-            return response()->json(['success' => 0, 'message' => 'Role assignment failed', 'error' => $e->getMessage()], 500);
+            return response()->json(['success' => 0, 'message' => 'Internal Server Error', 'error' => $e->getMessage()], 500);
         }
     }
 
