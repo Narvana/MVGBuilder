@@ -40,25 +40,20 @@ class AgentRegisterController extends Controller
 
             return response()->json([
                 'success' => 0,
-                'errors' => $formattedErrors
+                'error' => $formattedErrors[0]
             ], 422);
         }
 
 
         $agent_id=AgentRegister::where('referral_code',$request->code)->first();
-
+        // $agent_id=
         $agent_level=AgentLevels::where('agent_id',$agent_id->id)->first();
-        if(!$agent_id)
-        {
-            return response()->json(['success'=>0,'message'=>'Enter a correct referral code']);
-        }
+
         if($agent_level?->level==="10")
         {
-            return response()->json(['success'=>0,'message'=>"You don't have the access to register New Agent"]);
+            return response()->json(['success'=>0,'error'=>"You don't have the access to register New Agent"]);
         }
 
-        // $code= 'MVG' . 'L' . $agent_level->level + 1 . ;
-        // substr($request->fullname, 0, 3) . Str::random(10);
 
         $agent = AgentRegister::create([
             'fullname' => $request->fullname,
@@ -74,7 +69,7 @@ class AgentRegisterController extends Controller
             {
                 return response()->json([
                     'success' => 0,
-                    'message' => 'Agent Not Registered. Call to Support System'
+                    'error' => 'Agent Not Registered. Call to Support System'
                 ],400);
             }
 
@@ -90,42 +85,52 @@ class AgentRegisterController extends Controller
             if($agent_id->referral_code === "0")
             {
                 $level = 1;
+                $referral="0";
             }
             else if($agent_level->level === "1" )
             {
                 $level=2;
+                $referral= $agent_level->referral . $request->code ;   
             }
             else if($agent_level->level=== "2")
             {
                 $level= "3";
+                $referral= $agent_level->referral . $request->code ;  
             }
             else if($agent_level->level=== "3")
             {
                 $level= "4";
+                $referral= $agent_level->referral . $request->code ;  
             }
             else if($agent_level->level==="4")
             {
                 $level="5";
+                $referral= $agent_level->referral . $request->code ;  
             }
             else if($agent_level->level==="5")
             {
                 $level="6";
+                $referral= $agent_level->referral . $request->code ;  
             }
             else if($agent_level->level==="6")
             {
                 $level="7";
+                $referral= $agent_level->referral . $request->code ;  
             }
             else if($agent_level->level==="7")
             {
                 $level="8";
+                $referral= $agent_level->referral . $request->code ;  
             }
             else if($agent_level->level==="8")
             {
                 $level="9";
+                $referral= $agent_level->referral . $request->code ;  
             }
             else if($agent_level->level==="9")
             {
                 $level="10";
+                $referral= $agent_level->referral . $request->code ;  
             }
             // else if{
 
@@ -135,10 +140,11 @@ class AgentRegisterController extends Controller
                 'parent_id'=>$agent_id->id,
                 'agent_id'=>$agent->id,
                 'level'=> $level,
+                'referral'=>$referral
             ]);
             return response()->json(['success' => 1, 'data' => $agent,'level'=>$level], 201);
         } catch (\Exception $e) {
-            return response()->json(['success' => 0, 'message' => 'Internal Server Error', 'error' => $e->getMessage()], 500);
+            return response()->json(['success' => 0, 'error' => 'Internal Server Error. ' . $e->getMessage()], 500);
         }
     }
 
@@ -164,7 +170,7 @@ class AgentRegisterController extends Controller
     
             return response()->json([
                 'success' => 0,
-                'errors' => $formattedErrors
+                'error' => $formattedErrors[0]
             ], 422);
         }   
 
@@ -173,7 +179,7 @@ class AgentRegisterController extends Controller
         {
             return response()->json([
                 'success' => 0,
-                'message' => 'Email don\'t exist'
+                'error' => 'Email don\'t exist'
             ], 401);
         }
         if (!$agent->hasRole('agent')) 
@@ -195,7 +201,7 @@ class AgentRegisterController extends Controller
     
         return response()->json([
             'success' => 0,
-            'message' => 'Invalid credentials or Wrong Password'
+            'error' => 'Invalid credentials or Wrong Password'
         ], 401);
 
     }
@@ -209,7 +215,7 @@ class AgentRegisterController extends Controller
             return response()->json([
                 'success' => 1,
                 'agent' => $agent,
-                'profile'=>'Profile Value in Not Empty'
+                'profile'=>'Profile is Empty. Please Fill your profile data'
             ], 200);
         }
         return response()->json([
@@ -229,7 +235,7 @@ class AgentRegisterController extends Controller
             if (!$agent) {
                 return response()->json([
                     'success' => 0,
-                    'message' => 'Agent Not Found'
+                    'error' => 'Agent Not Found'
                 ], 404);
             }
     
@@ -243,8 +249,7 @@ class AgentRegisterController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => 0,
-                'message' => 'An error occurred while trying to remove the agent',
-                'error' => $e->getMessage()
+                'error' => 'An error occurred while trying to remove the agent. ' . $e->getMessage()
             ], 500);
         }
     }
@@ -269,7 +274,7 @@ class AgentRegisterController extends Controller
     
             return response()->json([
                 'success' => 0,
-                'errors' => $formattedErrors
+                'error' => $formattedErrors[0]
             ], 422);
         }   
 
@@ -335,14 +340,14 @@ class AgentRegisterController extends Controller
                 }
                 return response()->json([
                     'success' => 0,
-                    'errors' => $formattedErrors
+                    'error' => $formattedErrors[0]
                 ], 422);
             }   
 
             if(!$agent){
                 return response()->json([
                     'success' => 0,
-                    'message' => 'Agent Not Found'
+                    'error' => 'Agent Not Found'
                 ], 404);
             }
             else{
@@ -355,17 +360,18 @@ class AgentRegisterController extends Controller
                         return response()->json(['success'=>1, 'message' => 'Password Updated'], 201);
                     }
                     else{
-                        return response()->json(['success'=>0, 'message' => 'New Password and Verify Password should match each other'], 400);                        
+                        return response()->json(['success'=>0, 'error' => 'New Password and Verify Password should match each other'], 400);                        
                     }
                 }
-                return response()->json(['success'=>0, 'message' => 'Old Password Don\'t Matchs'], 400);
+                return response()->json(['success'=>0, 'error' => 'Old Password Don\'t Matchs'], 400);
             }
 
         } catch (\Throwable $th) {
-            return response()->json(['success'=>0,'message' => 'Something went wrong', 'details' => $th->getMessage()], 500);
+            return response()->json(['success'=>0, 'error' => $th->getMessage()], 500);
         }
     }
 
+    // All Level
       public function showLevel(Request $request)
     {
         $user=Auth::guard('sanctum')->user();
@@ -397,7 +403,8 @@ class AgentRegisterController extends Controller
             return $result;
     }
 
-    public function showSingleLevel(Request $request)
+    // Map
+    public function showMap(Request $request)
     {
 
         $user=Auth::guard('sanctum')->user();
@@ -408,7 +415,7 @@ class AgentRegisterController extends Controller
 
         if($level1Agents->isEmpty())
         {
-            return response()->json(['success'=>0,'message'=>'Data Not Found'],404);
+            return response()->json(['success'=>0,'error'=>'Data Not Found'],404);
         }
 
         foreach ($level1Agents as $agentLevel) {
@@ -418,7 +425,7 @@ class AgentRegisterController extends Controller
                 //  AgentRegister::where('id', $agent->agent_id)->first(),
             ];
         }
-        return response()->json($agentsHierarchy);   
+        return response()->json(['success'=>1, 'Map'=>$agentsHierarchy],200);   
     }
 
     public function showAllAgents(Request $request)
@@ -429,7 +436,7 @@ class AgentRegisterController extends Controller
         ->get();
         
         if($agents->isEmpty()){
-            return response()->json(['success'=>0,'message'=>'No Agent Found'],404);
+            return response()->json(['success' => 0,'error'=>'No Agent Found'],404);
         }
 
         foreach($agents as $agent){
@@ -439,6 +446,26 @@ class AgentRegisterController extends Controller
                     'level' => $agent->agentLevel ? $agent->agentLevel->level : null,
                 ];
         }
-        return response()->json(['success'=>1,'Agents'=>$allAgents]);
+        return response()->json(['success'=>1, 'Agents'=>$allAgents]);
+    }
+
+    public function showAgentDown(Request $request)
+    {
+        $user=Auth::guard('sanctum')->user();
+        
+        $level1Agents = AgentLevels::where('referral', 'like', '%' . $user->referral_code . '%')->with('agent')->get();
+          
+        if($level1Agents->isEmpty())
+        {
+            return response()->json(['success' => 0,'error' => 'Data Not Found'],404);
+        }
+
+        foreach ($level1Agents as $agentLevel) {
+            $agentsHierarchy[] = [
+                'level'=>$agentLevel->level,
+                'agent' =>$agentLevel->agent
+            ];
+        }
+        return response()->json(['success'=>1,'downAgent'=>$agentsHierarchy]);
     }
 }
