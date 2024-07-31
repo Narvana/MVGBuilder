@@ -483,7 +483,7 @@ class AgentRegisterController extends Controller
         ->select(
                  'plot_sales.plot_id',
                  'plots.plot_No',
-                 'plot_type',
+                 'plots.plot_type',
                 'plot_sales.totalAmount',
                 'agent_incomes.total_income',
                 'agent_incomes.tds_deduction',
@@ -493,11 +493,34 @@ class AgentRegisterController extends Controller
 
         if($income->isEmpty())
         {
-            return response()->json(['success' => 0,'error' => 'Data Not Found'],404);
+            return response()->json(['success' => 0,'error' =>"Data don't Exist"],400);
         }
 
                 return response()->json(['success'=>1,'Incomes'=>$income],200);
     }
 
+    public function agentClientInfo(Request $request)
+    {
+        $params=$request->query('agent_id');
+
+        $plot_sales = DB::table('plot_sales')
+        ->leftJoin('client_controllers', 'plot_sales.client_id', '=', 'client_controllers.id')
+        ->leftJoin('plots', 'plot_sales.plot_id', '=', 'plots.id')
+        ->select(
+                 'client_controllers.client_name',
+                 'client_controllers.client_contact',
+                 'client_controllers.client_address',
+                 'plots.plot_No',
+                 'plots.plot_type',                'plot_sales.totalAmount',
+                 'plot_sales.plot_status'
+                )->where('plot_sales.agent_id',$params)->get();
+        if($plot_sales->isEmpty())
+        {
+            return response()->json(['success' => 0,'error' => "Data don't Exist"],400);
+        }
+
+                return response()->json(['success'=>1,'Client'=>$plot_sales],200);
+   
+    }
 
 }

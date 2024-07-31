@@ -48,10 +48,16 @@ Route::middleware(['auth:sanctum','role:agent'])->group(function () {
    
     Route::get('/level', [AgentRegisterController::class, 'showLevel']);
 
+    // map
     Route::get('show/map/level', [AgentRegisterController::class, 'showMap']);
 
     // showAgentDown
     Route::get('/show/down/level', [AgentRegisterController::class, 'showAgentDown']);
+    
+    Route::get('/agent/Income', [AgentRegisterController::class, 'agentIncome']);
+    
+    Route::get('/agent/Client/Info', [AgentRegisterController::class, 'agentClientInfo']);
+
 
 });
 
