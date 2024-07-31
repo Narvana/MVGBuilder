@@ -154,7 +154,7 @@ class AgentRegisterController extends Controller
     public function loginAgent(Request $request)
     {
         $validator=Validator::make($request->all(),[
-            'email' => 'required|string|email',
+            'identifier' => 'required|string',
             'password' => [
                 'required',
                 'string',
@@ -177,7 +177,23 @@ class AgentRegisterController extends Controller
             ], 422);
         }   
 
-        $agent = AgentRegister::where('email', $request->email)->first();
+        $credentials = $request->only('identifier', 'password');
+        $identifier = $credentials['identifier'];
+
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            $agent = AgentRegister::where('email', $identifier)->first();
+        } else {
+            if($identifier === "0")
+            {
+                return response()->json([
+                    'success' => 0,
+                    'error' => "Super Agent should login with email"
+                ], 401);
+            }
+            // Otherwise, assume it's a referral code
+            $agent = AgentRegister::where('referral_code', $identifier)->first();
+        }
+
         if(!$agent)
         {
             return response()->json([
