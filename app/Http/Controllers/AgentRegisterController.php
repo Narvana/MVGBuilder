@@ -6,11 +6,14 @@ use App\Models\AgentRegister;
 use App\Models\AgentProfile;
 use App\Models\AgentLevels;
 use App\Http\Controllers\Controller;
+use App\Models\AgentIncome;
+use App\Models\Plot_Sale;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class AgentRegisterController extends Controller
 {
@@ -468,4 +471,33 @@ class AgentRegisterController extends Controller
 
         return response()->json(['success'=>1,'downAgent'=>$agentsHierarchy]);
     }
+
+    public function agentIncome(Request $request)
+    {
+
+        $params=$request->query('agent_id');
+
+        $income = DB::table('agent_incomes')
+        ->leftJoin('plot_sales', 'agent_incomes.plot_sale_id', '=', 'plot_sales.id')
+        ->leftJoin('plots', 'plot_sales.plot_id', '=', 'plots.id')
+        ->select(
+                 'plot_sales.plot_id',
+                 'plots.plot_No',
+                 'plot_type',
+                'plot_sales.totalAmount',
+                'agent_incomes.total_income',
+                'agent_incomes.tds_deduction',
+                'agent_incomes.final_income',
+                'agent_incomes.transaction_status',
+                )->where('agent_incomes.final_agent',$params)->get();
+
+        if($income->isEmpty())
+        {
+            return response()->json(['success' => 0,'error' => 'Data Not Found'],404);
+        }
+
+                return response()->json(['success'=>1,'Incomes'=>$income],200);
+    }
+
+
 }
