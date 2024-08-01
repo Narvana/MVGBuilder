@@ -69,25 +69,37 @@ class PlotController extends Controller
 
     public function showPlot(Request $request)
     {
+        $params=$request->query('id');
         try {
-            //code...            
-            $plots=Plot::get();
-            $params=$request->query('id');
-            if($plots->isEmpty())
+            //code...
+            $sales = DB::table('plots')
+            ->leftJoin('plot_sales', 'plots.id', '=', 'plot_sales.plot_id')
+            ->leftJoin('client_controllers', 'plot_sales.client_id', '=', 'client_controllers.id')
+            ->select(
+                'plots.id',
+                'plots.plot_No',
+                'plots.plot_type',
+                'plots.plot_area',
+                'plots.price_from',
+                'plots.price_to',
+                'plots.plot_status',
+                DB::raw('IFNULL(client_controllers.client_name, \'\') AS client_name'),
+            );
+            if($params)
             {
-                return response()->json(['success'=>0,'error'=>'No data Found'],404);
+                $sales=$sales->where('plots.id',$params);
             }
-            if($params){
-                $plot = Plot::find($params);
-                if(!$plot)
-                {
-                    return response()->json(['success'=>0,'error'=>"No data Found, in id {$params}"],404);   
-                }
-                return response()->json(['success'=>1,'plot'=>$plot],200);
+             $sales=$sales->get();
+            if($sales->isEmpty()){
+                return response()->json([
+                    'success' => 0,
+                    'error' => 'No Data Found'
+                ], 404);
             }
-            return response()->json(['success'=>1,'plots'=>$plots],200);
+                return response()->json(['success'=>1 ,'sales'=>$sales]);
         } catch (\Throwable $th) {
-            return response()->json(['success'=>0, 'details' => 'Internal Server Error. ' . $th->getMessage()], 500);
+            //throw $th;
+            return response()->json(['success'=>0, 'error' => $th->getMessage()], 500);
         }
     }
 

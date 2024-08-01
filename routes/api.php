@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\AdminRegisterController;
+use App\Http\Controllers\AgentIncomeController;
 use App\Http\Controllers\AgentRegisterController;
 use App\Http\Controllers\ClientControllerController;
 use App\Http\Controllers\PlotController;
 use App\Http\Controllers\SiteController;
+use App\Models\AgentIncome;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -54,10 +56,11 @@ Route::middleware(['auth:sanctum','role:agent'])->group(function () {
     // showAgentDown
     Route::get('/show/down/level', [AgentRegisterController::class, 'showAgentDown']);
     
-    Route::get('/agent/Income', [AgentRegisterController::class, 'agentIncome']);
+    Route::get('/agent/Income', [AgentIncomeController::class, 'agentIncome']);
     
     Route::get('/agent/Client/Info', [AgentRegisterController::class, 'agentClientInfo']);
 
+    Route::get('/Agent/Sales',[AgentIncomeController::class,'agentSales']);
 
 });
 
