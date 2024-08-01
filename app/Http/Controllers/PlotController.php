@@ -302,11 +302,11 @@ class PlotController extends Controller
                     // 'agent_registers.fullname',
                     // 'agent_registers.contact_no',
                     // 'agent_registers.pancard_no', // Replace 'agent_name' with the actual column name you want from the agents table
-                    'plot_sales.totalAmount', 
-                    'plot_sales.plot_status', 
-                    'plot_sales.plot_value', 
 
-
+                    'plot_sales.totalAmount',
+                    DB::raw('ROUND(plot_sales.totalAmount * (plot_sales.plot_value / 100), 2) AS calculated_value'),
+                    'plot_sales.plot_status',
+                    'plot_sales.plot_value',
                 )
     ->get();
      if(!$sales){
@@ -317,7 +317,6 @@ class PlotController extends Controller
     }
         return response()->json(['success'=>1 ,'sales'=>$sales]);
     }
-
 }
 
 
