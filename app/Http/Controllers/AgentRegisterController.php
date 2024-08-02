@@ -526,6 +526,7 @@ class AgentRegisterController extends Controller
         ->leftJoin('plots', 'plot_sales.plot_id', '=', 'plots.id')
         ->leftJoin('sites','plots.site_id','=','sites.id')
         ->select(
+                 'client_controllers.id as client_id',
                  'client_controllers.client_name',
                  'client_controllers.client_contact',
                  'client_controllers.client_address',
@@ -535,7 +536,6 @@ class AgentRegisterController extends Controller
                  'plot_sales.totalAmount',
                  'plot_sales.plot_status'
                 )->where('plot_sales.agent_id',$user->id);
-
         
         if ($params) 
         {
