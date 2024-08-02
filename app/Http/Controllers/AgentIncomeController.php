@@ -46,18 +46,27 @@ class AgentIncomeController extends Controller
     {
         $user=Auth::guard('sanctum')->user();
 
-        // $sales = DB::table('agent_registers')
-        // ->leftJoin('plot_sales', 'agent_registers.id', '=', 'plot_sales.agent_id')
-        // ->select('agent_registers.id', 'plot_sales.totalAmount')
-        // ->where('agent_registers.id', $user->id)
-        // ->where('plot_sales.created_at');
+        $monthNames = [
+            1 => 'JAN',
+            2 => 'FEB',
+            3 => 'MAR',
+            4 => 'APR',
+            5 => 'MAY',
+            6 => 'JUN',
+            7 => 'JUL',
+            8 => 'AUG',
+            9 => 'SEP',
+            10 => 'OCT',
+            11 => 'NOV',
+            12 => 'DEC',
+        ];
 
         $sales = DB::table('plot_sales')
         ->leftJoin('agent_registers', 'plot_sales.agent_id', '=', 'agent_registers.id')
         ->select(
             DB::raw('YEAR(plot_sales.created_at) as year'),
             DB::raw('MONTH(plot_sales.created_at) as month'),
-            DB::raw('SUM(plot_sales.totalAmount) as totalAmount')
+            DB::raw('SUM(plot_sales.totalAmount) as monthSale')
         )
         ->where('agent_registers.id', $user->id)
         ->groupBy(DB::raw('YEAR(plot_sales.created_at)'))
@@ -65,14 +74,20 @@ class AgentIncomeController extends Controller
         ->orderBy(DB::raw('YEAR(plot_sales.created_at)'))
         ->orderBy(DB::raw('MONTH(plot_sales.created_at)'))
         ->get();
-        
-        $total=$sales->sum('totalAmount');
-        // if($sales->isEmpty())
-        // {
-        //     return response()->json(['success' => 0,'error' =>"Data don't Exist"],400);
-        // }
 
-        return response()->json(['success'=>1,'total'=>$total,'Sales'=>$sales],200);        
+        if($sales->isEmpty())
+        {
+            return response()->json(['success' => 0,'error' =>"Data don't Exist"],400);
+        }
+        
+        $total=$sales->sum('monthSale');
+
+        $sales->transform(function ($item) use ($monthNames) {
+            $item->month_name = $monthNames[$item->month] ?? 'Unknown';
+            return $item;
+        });
+
+        return response()->json(['success'=>1,'totalSale'=>$total,'Sales'=>$sales],200);
     }
 
 }
