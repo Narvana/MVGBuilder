@@ -111,12 +111,12 @@ class AdminRegisterController extends Controller
     }
 
     public function profileAdmin(Request $request){
-        $admin = Auth::user();
+        $admin = Auth::guard('sanctum')->user();
 
         if(!$admin){
             return response()->json([
                 'success' => 0,
-                'error'=>'Unauthorized, Admin Value not found',
+                'error'=>'Unauthorized, Admin not found',
             ]);
         }
         return response()->json([
@@ -124,4 +124,73 @@ class AdminRegisterController extends Controller
             'admin' => $admin,
         ], 200);
     }   
+
+    public function changePasswordAdmin(Request $request)
+    {
+        try {
+            //code...
+            $admin=Auth::guard('sanctum')->user(); 
+
+            $validator=Validator::make($request->all(),[
+                'oldPassword'=>[
+                    'required',
+                    'string',
+                    'min:8',
+                    'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/'
+                ],
+                'newPassword'=>  [
+                    'required',
+                    'string',
+                    'min:8',
+                    'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/'
+                ],
+                'verifyPassword'=>[
+                    'required',
+                    'string',
+                    'min:8',
+                    'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/'
+                ],
+            ]);
+
+            
+            if ($validator->fails()) {
+                $errors = $validator->errors()->all(); // Get all error messages
+                $formattedErrors = [];
+        
+                foreach ($errors as $error) {
+                    $formattedErrors[] = $error;
+                }
+                return response()->json([
+                    'success' => 0,
+                    'error' => $formattedErrors[0]
+                ], 422);
+            }   
+
+            if(!$admin){
+                return response()->json([
+                    'success' => 0,
+                    'error' => 'Admin Not Found'
+                ], 404);
+            }
+            else{
+                if($admin && Hash::check($request->oldPassword, $admin->password))
+                {
+                    if($request->newPassword === $request->verifiyPassword)
+                    {
+                        $admin->password=Hash::make($request->newPassword);
+                        $admin->save();
+                        return response()->json(['success'=>1, 'message' => 'Password Updated'], 201);
+                    }
+                    else{
+                        return response()->json(['success'=>0, 'error' => 'New Password and Verify Password should match each other'], 400);                        
+                    }
+                }
+                return response()->json(['success'=>0, 'error' => 'Old Password Don\'t Matchs'], 400);
+            }
+
+        } catch (\Throwable $th) {
+            return response()->json(['success'=>0, 'error' => $th->getMessage()], 500);
+        }
+    }
+
 }
