@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('agent_profiles', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('agent_id');
-            $table->string('designation');
             $table->text('description');
             $table->string('address',500);
             $table->timestamps();

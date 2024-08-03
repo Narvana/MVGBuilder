@@ -10,9 +10,7 @@ class AgentProfile extends Model
     use HasFactory;
     protected $fillable=[
         'agent_id',
-        'designation',
         'description',
-        'contact_no',
         'address'
     ];
 }
