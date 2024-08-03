@@ -26,7 +26,7 @@ class AgentRegisterController extends Controller
                 'required',
                 'string',
                 'min:8',
-                'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/',
+                'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/',
             ],
             'pancard_no' => 'required|string|min:10|max:10|unique:agent_registers,pancard_no',
             'contact_no' => 'required|string|min:10|max:10|unique:agent_registers,contact_no',
@@ -159,7 +159,7 @@ class AgentRegisterController extends Controller
                 'required',
                 'string',
                 'min:8',
-                'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/'
+                'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/'
             ],
         ]);
 

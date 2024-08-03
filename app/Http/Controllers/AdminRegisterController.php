@@ -20,7 +20,7 @@ class AdminRegisterController extends Controller
                 'required',
                 'string',
                 'min:8',
-                'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/'
+                'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/'
             ],
         ]);
 
@@ -61,7 +61,7 @@ class AdminRegisterController extends Controller
                 'required',
                 'string',
                 'min:8',
-                'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/'
+                'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/'
             ],
         ]);
 
