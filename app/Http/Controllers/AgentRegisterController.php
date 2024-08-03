@@ -20,6 +20,10 @@ class AgentRegisterController extends Controller
 {
     //
     public function registerAgent(Request $request){
+    try {
+
+        DB::beginTransaction();
+        
         $validator = Validator::make($request->all(), [
             'fullname' => 'required|string',
             'email' => 'required|string|email|unique:agent_registers,email',
@@ -68,7 +72,7 @@ class AgentRegisterController extends Controller
             'pancard_no' => $request->pancard_no,
         ]);
         
-        try {
+
             if(!$agent)
             {
                 return response()->json([
@@ -147,11 +151,15 @@ class AgentRegisterController extends Controller
                 'referral'=>$referral
             ]);
 
+            DB::commit();
+
             $url = "https://www.fast2sms.com/dev/bulkV2?authorization=JqKpX9IMLieFSUH7sThu5yOElafAPw1N4Cvmc02rgWtGxbnD8jm4zNCQqYpkF8lMaXSU9rWIEeBHDiLj&route=q&message=Welcome%20to%20%20MVG%20Builders,%20your%20details%20are:%0AReferal%20ID%20:%20{$agent->referral_code}%0APassword%20:%20{$request->password}&flash=0&numbers={$agent->contact_no}";
+
             $response = Http::get($url);
 
             return response()->json(['success' => 1, 'data' => $agent,'level'=>$level,'Sms Response'=>$response->json()], 201);
         } catch (\Exception $e) {
+            DB::rollback();
             return response()->json(['success' => 0, 'error' => 'Internal Server Error. ' . $e->getMessage()], 500);
         }
     }
@@ -231,21 +239,17 @@ class AgentRegisterController extends Controller
     }
 
     public function profile(Request $request){
-        $agent = Auth::user();
-        $profile=AgentProfile::where('agent_id',$agent->id)->get();
-        // $agent->id;
+        $agent = Auth::guard('sanctum')->user();
 
-        if(!$profile){
+        if(!$agent){
             return response()->json([
-                'success' => 1,
-                'agent' => $agent,
-                'profile'=>'Profile is Empty. Please Fill your profile data'
-            ], 200);
+                'success' => 0,
+                'error' => 'No Such Agent Exist or Some Token Issue may Occur'
+            ], 400);
         }
         return response()->json([
             'success' => 1,
             'agent' => $agent,
-            'profile'=>$profile
         ], 200);
     }
 
