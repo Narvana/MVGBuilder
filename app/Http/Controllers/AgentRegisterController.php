@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 
@@ -145,7 +146,8 @@ class AgentRegisterController extends Controller
                 'level'=> $level,
                 'referral'=>$referral
             ]);
-            return response()->json(['success' => 1, 'data' => $agent,'level'=>$level], 201);
+
+             return response()->json(['success' => 1, 'data' => $agent,'level'=>$level], 201);
         } catch (\Exception $e) {
             return response()->json(['success' => 0, 'error' => 'Internal Server Error. ' . $e->getMessage()], 500);
         }
@@ -333,19 +335,19 @@ class AgentRegisterController extends Controller
                     'required',
                     'string',
                     'min:8',
-                    'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/'
+                    'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/'
                 ],
                 'newPassword'=>  [
                     'required',
                     'string',
                     'min:8',
-                    'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/'
+                    'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/'
                 ],
                 'verifyPassword'=>[
                     'required',
                     'string',
                     'min:8',
-                    'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/'
+                    'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/'
                 ],
             ]);
 
@@ -372,7 +374,7 @@ class AgentRegisterController extends Controller
             else{
                 if($agent && Hash::check($request->oldPassword, $agent->password))
                 {
-                    if($request->newPassword === $request->verifiyPassword)
+                    if($request->newPassword === $request->verifyPassword)
                     {
                         $agent->password=Hash::make($request->newPassword);
                         $agent->save();

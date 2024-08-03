@@ -175,7 +175,7 @@ class AdminRegisterController extends Controller
             else{
                 if($admin && Hash::check($request->oldPassword, $admin->password))
                 {
-                    if($request->newPassword === $request->verifiyPassword)
+                    if($request->newPassword === $request->verifyPassword)
                     {
                         $admin->password=Hash::make($request->newPassword);
                         $admin->save();
