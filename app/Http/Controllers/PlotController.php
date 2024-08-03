@@ -71,6 +71,7 @@ class PlotController extends Controller
     public function showPlot(Request $request)
     {
         $params=$request->query('id');
+        $site=$request->query('site');
         try {
             //code...
             $sales = DB::table('plots')
@@ -92,14 +93,18 @@ class PlotController extends Controller
             {
                 $sales=$sales->where('plots.id',$params);
             }
-             $sales=$sales->get();
+            else if($site)
+            {
+                $sales=$sales->where('sites.site_name',$site);
+            }
+            $sales=$sales->get();
             if($sales->isEmpty()){
                 return response()->json([
                     'success' => 0,
                     'error' => 'No Data Found'
                 ], 404);
             }
-                return response()->json(['success'=>1 ,'sales'=>$sales]);
+            return response()->json(['success'=>1 ,'sales'=>$sales]);
         } catch (\Throwable $th) {
             //throw $th;
             return response()->json(['success'=>0, 'error' => $th->getMessage()], 500);
