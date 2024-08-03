@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\AgentDGSale;
 use App\Models\AgentIncome;
 use App\Models\AgentLevels;
 use App\Models\AgentRegister;
@@ -75,6 +76,43 @@ class PlotController extends Controller
             $sales = DB::table('plots')
             ->leftJoin('plot_sales', 'plots.id', '=', 'plot_sales.plot_id')
             ->leftJoin('client_controllers', 'plot_sales.client_id', '=', 'client_controllers.id')
+            ->leftJoin('sites','plots.site_id','=','sites.id')            
+            ->select(
+                'plots.id',
+                'plots.plot_No',
+                'plots.plot_type',
+                'plots.plot_area',
+                'plots.price_from',
+                'plots.price_to',
+                'plots.plot_status',
+                DB::raw('IFNULL(client_controllers.client_name, \'\') AS client_name'),
+                'sites.site_name'
+            );
+            if($params)
+            {
+                $sales=$sales->where('plots.id',$params);
+            }
+             $sales=$sales->get();
+            if($sales->isEmpty()){
+                return response()->json([
+                    'success' => 0,
+                    'error' => 'No Data Found'
+                ], 404);
+            }
+                return response()->json(['success'=>1 ,'sales'=>$sales]);
+        } catch (\Throwable $th) {
+            //throw $th;
+            return response()->json(['success'=>0, 'error' => $th->getMessage()], 500);
+        }
+    }
+
+    public function showPlotAdmin(Request $request)
+    {
+        $params = $request->query('id');
+        try {
+            //code...
+            $sales = DB::table('plots')
+            ->leftJoin('plot_sales', 'plots.id', '=', 'plot_sales.plot_id')
             ->select(
                 'plots.id',
                 'plots.plot_No',
@@ -122,6 +160,7 @@ class PlotController extends Controller
 
     public function PlotTransaction(Request $request)
     {
+        DB::beginTransaction();
         try {
             // Validate request data
             $validator = Validator::make($request->all(), [
@@ -130,22 +169,29 @@ class PlotController extends Controller
                 'payment_method' => 'required|string'
             ]);
         
+            // if ($validator->fails()) {
+            //     $errors = $validator->errors()->all(); // Get all error messages
+            //     $formattedErrors = [];
+        
+            //     foreach ($errors as $error) {
+            //         $formattedErrors[] = $error;
+            //     }
+        
+            //     return response()->json([
+            //         'success' => 0,
+            //         'error' => $formattedErrors[0]
+            //     ], 422);
+            // } 
             if ($validator->fails()) {
-                $errors = $validator->errors()->all(); // Get all error messages
-                $formattedErrors = [];
-        
-                foreach ($errors as $error) {
-                    $formattedErrors[] = $error;
-                }
-        
+                $errors = $validator->errors()->all();
                 return response()->json([
                     'success' => 0,
-                    'error' => $formattedErrors[0]
+                    'error' => $errors[0] // Return the first error message
                 ], 422);
-            }   
+            }  
         
             $data = $validator->validated();
-        
+
             $plot_sale = Plot_Sale::findOrFail($data['plot_sale_id']);
 
             $plot = Plot::where('id',$plot_sale->plot_id)->first();
@@ -165,6 +211,7 @@ class PlotController extends Controller
                 $existingTransaction = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])->exists();
             
                 // If no existing transaction, validate amount and create a new transaction
+                
                 if (!$existingTransaction) {
                     if ($data['amount'] > $plot_sale->totalAmount) {
                         return response()->json([
@@ -179,6 +226,7 @@ class PlotController extends Controller
                         'amount' => $data['amount'],
                         'payment_method' => $data['payment_method']
                     ]);
+
                 } else {
                     // Validate payment amount if there's already an existing transaction
                     $amountPaid = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])
@@ -222,9 +270,58 @@ class PlotController extends Controller
                 
                 if($plot_sale->plot_status === 'BOOKED')
                 {
-                    $CheckIncome=AgentIncome::where('plot_sale_id',$data['plot_sale_id'])->first();
+                    $CheckIncome=AgentIncome::where('plot_sale_id',$data['plot_sale_id'])->exists();
                     if(!$CheckIncome)
                     {
+                        $agentDG=AgentDGSale::where('agent_id', $plot_sale->agent_id)->first();
+
+                        if(!$agentDG)
+                        {
+                            AgentDGSale::create([
+                                'agent_id' => $plot_sale->agent_id,
+                                'direct' => 1,
+                                'group'=> 1,
+                            ]);
+                        }else
+                        {
+                            $agentDG->update([
+                                'direct' => $agentDG -> direct + 1,
+                                'group' => $agentDG -> group + 1,
+                            ]);
+                        }
+
+                        $agentParent=AgentLevels::where('agent_id', $plot_sale->agent_id)->first();
+                        $agentlevel=AgentLevels::where('agent_id', $agentParent->parent_id)->first();
+                        if($agentlevel->level !== "1")
+                        {
+                            while($agentParent)
+                            {
+                                $agentPDG=AgentDGSale::where('agent_id',$agentParent->parent_id)->first();
+    
+                                if(!$agentPDG)
+                                {
+                                    AgentDGSale::create([
+                                        'agent_id' => $agentParent->parent_id,
+                                        'direct' => 0,
+                                        'group' => 1,
+                                    ]);
+                                }
+                                else{
+                                    $agentPDG->update([
+                                        'group' => $agentPDG->group + 1,
+                                    ]);
+                                }
+    
+                                $agentlevel=AgentLevels::where('agent_id', $agentParent->parent_id)->first();
+    
+                                if($agentlevel->level === "1")
+                                {
+                                    break;
+                                }
+                                $agentParent=$agentlevel;
+                            }    
+                        }
+
                         $seller_id=$plot_sale->agent_id;
                     
                         $total_amount = $plot_sale->totalAmount; 
@@ -239,11 +336,11 @@ class PlotController extends Controller
                             "3" => 2,
                             "4" => 1,
                             "5" => 1,
-                            "6" =>0.70,
+                            "6" => 0.70,
                             "7" => 0.60,
                             "8" => 0.40,
                             "9" => 0.20,
-                            "10" =>0.10
+                            "10" => 0.10
                         ];
                         
                         // $levelTables=AgentLevels::get()
@@ -271,9 +368,12 @@ class PlotController extends Controller
                                 // Stop the execution if the parent ID does not exist
                                 break;
                             }
-                        }                                     
+                        }
                     }                    
                 }
+
+                DB::commit();
+
                 return response()->json([
                     'success' => 1,
                     'message' => 'Transaction Added',
@@ -283,6 +383,7 @@ class PlotController extends Controller
                 ], 201);        
             } 
         } catch (\Throwable $th) {
+            DB::rollBack();
             return response()->json([
                 'success' => 0,
                 'error' => 'Internal Server Error. ' . $th->getMessage()

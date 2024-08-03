@@ -65,7 +65,11 @@ Route::middleware(['auth:sanctum','role:agent'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum','role:admin'])->group(function () {
+
     Route::get('/profile/Admin',[AdminRegisterController::class, 'profileAdmin']);
+
+    Route::get('/change/password/Admin',[AdminRegisterController::class, 'changePasswordAdmin']);
+
     Route::post('/add/Site',[SiteController::class,'addSite']);
 
     Route::delete('/remove/Site',[SiteController::class,'removeSite']);
