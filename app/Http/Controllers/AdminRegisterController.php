@@ -100,7 +100,8 @@ class AdminRegisterController extends Controller
             return response()->json([
                 'success' => 1,
                 'admin' => $admin,
-                'token' => $token
+                'token' => $token,
+                'expire' => 1440,
             ], 200);
         }
         return response()->json([
@@ -117,7 +118,7 @@ class AdminRegisterController extends Controller
             return response()->json([
                 'success' => 0,
                 'error'=>'Unauthorized, Admin not found',
-            ]);
+            ],404);
         }
         return response()->json([
             'success' => 1,
@@ -185,7 +186,7 @@ class AdminRegisterController extends Controller
                         return response()->json(['success'=>0, 'error' => 'New Password and Verify Password should match each other'], 400);                        
                     }
                 }
-                return response()->json(['success'=>0, 'error' => 'Old Password Don\'t Matchs'], 400);
+                return response()->json(['success'=>0, 'error' => "Current Password Don't Matchs"], 400);
             }
 
         } catch (\Throwable $th) {

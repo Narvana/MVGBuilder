@@ -40,7 +40,7 @@ Route::middleware(['auth:sanctum','role:agent'])->group(function () {
    
     Route::post('/update/profile/agent', [AgentRegisterController::class, 'updateProfile']);
       
-    Route::post('/changePassword/agent',[AgentRegisterController::class,'changePassword']);
+    Route::post('/change/Password/agent',[AgentRegisterController::class,'changePassword']);
    
     Route::post('/addClient/agent',[ClientControllerController::class,'addClient']);
 
@@ -66,7 +66,7 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
 
     Route::get('/profile/Admin',[AdminRegisterController::class, 'profileAdmin']);
 
-    Route::get('/change/password/Admin',[AdminRegisterController::class, 'changePasswordAdmin']);
+    Route::post('/change/password/Admin',[AdminRegisterController::class, 'changePasswordAdmin']);
 
     Route::post('/add/Site',[SiteController::class,'addSite']);
 

@@ -227,7 +227,8 @@ class AgentRegisterController extends Controller
             return response()->json([
                 'success' => 1,
                 'agent' => $agent,
-                'token' => $token
+                'token' => $token,
+                'expire' => 1440,
             ], 200);
         }
     
@@ -346,17 +347,12 @@ class AgentRegisterController extends Controller
 
             
             if ($validator->fails()) {
-                $errors = $validator->errors()->all(); // Get all error messages
-                $formattedErrors = [];
-        
-                foreach ($errors as $error) {
-                    $formattedErrors[] = $error;
-                }
+                $errors = $validator->errors()->all();
                 return response()->json([
                     'success' => 0,
-                    'error' => $formattedErrors[0]
+                    'error' => $errors[0] // Return the first error message
                 ], 422);
-            }   
+            }  
 
             if(!$agent){
                 return response()->json([
@@ -377,7 +373,7 @@ class AgentRegisterController extends Controller
                         return response()->json(['success'=>0, 'error' => 'New Password and Verify Password should match each other'], 400);                        
                     }
                 }
-                return response()->json(['success'=>0, 'error' => 'Old Password Don\'t Matchs'], 400);
+                return response()->json(['success'=>0, 'error' => "Current Password Don't Matches"], 400);
             }
 
         } catch (\Throwable $th) {
@@ -504,7 +500,7 @@ class AgentRegisterController extends Controller
 
         if($income->isEmpty())
         {
-            return response()->json(['success' => 0,'error' =>"Data don't Exist"],400);
+            return response()->json(['success' => 0,'error' =>"Data don't Exist or Data Not Found"],404);
         }
 
                 return response()->json(['success'=>1,'Incomes'=>$income],200);
@@ -540,7 +536,7 @@ class AgentRegisterController extends Controller
         $plot_sales = $plot_sales->get();
         if($plot_sales->isEmpty())
         {
-            return response()->json(['success' => 0,'error' => "Data don't Exist"],400);
+            return response()->json(['success' => 0,'error' => "Data don't Exist or Data not Found"],404);
         }
         return response()->json(['success'=>1,'Client'=>$plot_sales],200);
     }

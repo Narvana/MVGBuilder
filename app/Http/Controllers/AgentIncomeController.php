@@ -36,7 +36,7 @@ class AgentIncomeController extends Controller
 
         if($income->isEmpty())
         {
-            return response()->json(['success' => 0,'error' =>"Data don't Exist"],400);
+            return response()->json(['success' => 0,'error' =>"Data don't Exist or Data Not Found"],404);
         }
 
                 return response()->json(['success'=>1,'Incomes'=>$income],200);
@@ -77,7 +77,7 @@ class AgentIncomeController extends Controller
 
         if($sales->isEmpty())
         {
-            return response()->json(['success' => 0,'error' =>"Data don't Exist"],400);
+            return response()->json(['success' => 0,'error' =>"Data don't Exist or Data Not Found"],404);
         }
         
         $total=$sales->sum('monthSale');

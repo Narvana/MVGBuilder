@@ -71,7 +71,7 @@ class SiteController extends Controller
             $params=$request->query('id');
             if($sites->isEmpty())
             {
-                return response()->json(['success'=>0,'error'=>'No data Found'],404);
+                return response()->json(['success'=>0,'error'=>'No Data Exists or No data Found'],404);
             }
             if($params){
                 $site = Site::find($params);  

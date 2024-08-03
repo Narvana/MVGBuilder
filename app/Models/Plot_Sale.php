@@ -11,6 +11,11 @@ class Plot_Sale extends Model
     
     protected $table = 'plot_sales'; 
 
+    public function transactions()
+    {
+        return $this->hasMany(PlotTransaction::class, 'plot_sale_id');
+    }
+
     protected $fillable=[
         'plot_id',
         'client_id',

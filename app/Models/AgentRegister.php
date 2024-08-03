@@ -27,6 +27,6 @@ class AgentRegister extends Model
         'referral_code',
         'pancard_no',
         'contact_no',
-        'address'
+        'address',
     ];
 }
