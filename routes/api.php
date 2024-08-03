@@ -38,10 +38,8 @@ Route::middleware(['auth:sanctum','role:agent'])->group(function () {
   
     Route::get('/profile/agent', [AgentRegisterController::class, 'profile']);
    
-    Route::post('/add/profile/agent', [AgentRegisterController::class, 'addProfile']);
-   
     Route::post('/update/profile/agent', [AgentRegisterController::class, 'updateProfile']);
-   
+      
     Route::post('/changePassword/agent',[AgentRegisterController::class,'changePassword']);
    
     Route::post('/addClient/agent',[ClientControllerController::class,'addClient']);

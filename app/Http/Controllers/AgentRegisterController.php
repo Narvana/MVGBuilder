@@ -147,7 +147,10 @@ class AgentRegisterController extends Controller
                 'referral'=>$referral
             ]);
 
-             return response()->json(['success' => 1, 'data' => $agent,'level'=>$level], 201);
+            $url = "https://www.fast2sms.com/dev/bulkV2?authorization=JqKpX9IMLieFSUH7sThu5yOElafAPw1N4Cvmc02rgWtGxbnD8jm4zNCQqYpkF8lMaXSU9rWIEeBHDiLj&route=q&message=Welcome%20to%20%20MVG%20Builders,%20your%20details%20are:%0AReferal%20ID%20:%20{$agent->referral_code}%0APassword%20:%20{$request->password}&flash=0&numbers={$agent->contact_no}";
+            $response = Http::get($url);
+
+            return response()->json(['success' => 1, 'data' => $agent,'level'=>$level,'Sms Response'=>$response->json()], 201);
         } catch (\Exception $e) {
             return response()->json(['success' => 0, 'error' => 'Internal Server Error. ' . $e->getMessage()], 500);
         }
@@ -275,14 +278,15 @@ class AgentRegisterController extends Controller
         }
     }
 
-    public function addProfile(Request $request){
-        $agent = Auth::user();
-        $agent_profile=AgentProfile::where('agent_id',$agent->id)->first();
+    public function updateProfile(Request $request){
+        $agent = Auth::guard('sanctum')->user();
+
         $validator=Validator::make($request->all(),[
-            'agent_id' => $agent_profile ? 'nullable|integer|exists:agent_registers,id' : 'required|integer|exists:agent_registers,id',
-            'designation' => $agent_profile ? 'nullable|string' : 'required|string',
-            'description' =>  $agent_profile ? 'nullable|string' : 'required|string',
-            'address'=>  $agent_profile ? 'nullable|string' : 'required|string' 
+            'fullname' => 'nullable|string',
+            'email' => 'nullable|string|email|unique:agent_registers,email',
+            'pancard_no' => 'nullable|string|min:10|max:10|unique:agent_registers,pancard_no',
+            'contact_no' => 'nullable|string|min:10|max:10|unique:agent_registers,contact_no',
+            'address'=>  'sometimes|string' 
         ]);
 
         if ($validator->fails()) {
@@ -299,29 +303,14 @@ class AgentRegisterController extends Controller
             ], 422);
         }   
 
-        $profile=$request->only(['designation','description','address']);
-        if($agent_profile){
-            if(isset( $request->fullname))
-            {
-                $agent->fullname = $request->fullname;
-                $agent->save();
-            }
-            $agent_profile->update($profile);
+            $data = $validator->validated();
+            $agent->update($data);        
             
             return response()->json([
                 'success'=>1,
-                'message' => 'Profile updated successfully',
-                'profile' => $agent_profile,
+                'message' => 'Agent updated successfully',
                 'agent' => $agent
             ], 201);
-        }
-        $agentprofile=AgentProfile::create([
-         'agent_id'=>$agent->id,
-         'designation'=>$profile['designation'],
-         'description'=>$profile['description'],
-         'address' => $profile['address'],
-        ]);
-        return response()->json(['success'=>1, 'message' => 'Profile created successfully', 'profile' => $agentprofile, 'agent'=>$agent], 201);
     }
 
     public function changePassword(Request $request)
