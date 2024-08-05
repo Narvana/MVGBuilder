@@ -179,19 +179,6 @@ class PlotController extends Controller
                 'payment_method' => 'required|string'
             ]);
         
-            // if ($validator->fails()) {
-            //     $errors = $validator->errors()->all(); // Get all error messages
-            //     $formattedErrors = [];
-        
-            //     foreach ($errors as $error) {
-            //         $formattedErrors[] = $error;
-            //     }
-        
-            //     return response()->json([
-            //         'success' => 0,
-            //         'error' => $formattedErrors[0]
-            //     ], 422);
-            // } 
             if ($validator->fails()) {
                 $errors = $validator->errors()->all();
                 return response()->json([
@@ -219,6 +206,8 @@ class PlotController extends Controller
         
                 // Check if there's an existing transaction
                 $existingTransaction = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])->exists();
+
+                $amountPaid = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])->sum('amount');
             
                 // If no existing transaction, validate amount and create a new transaction
                 
@@ -239,8 +228,8 @@ class PlotController extends Controller
 
                 } else {
                     // Validate payment amount if there's already an existing transaction
-                    $amountPaid = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])
-                        ->sum(DB::raw('CAST(amount AS UNSIGNED)'));
+                    // $amountPaid = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])
+                    //     ->sum(DB::raw('CAST(amount AS UNSIGNED)'));
             
                     $remainingAmount = $plot_sale->totalAmount - $amountPaid;
             
@@ -261,8 +250,7 @@ class PlotController extends Controller
                 }
             
                 // Calculate the total amount paid and determine the plot status
-                $amountPaid = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])
-                    ->sum(DB::raw('CAST(amount AS UNSIGNED)'));
+                $amountPaid += $data['amount'];
             
                 $percentagePaid = round(($amountPaid / $plot_sale->totalAmount) * 100, 2);
             
@@ -277,80 +265,76 @@ class PlotController extends Controller
                 $plot->update([
                     'plot_status' => $status
                 ]);
+                // $plot_sale->plot->update(['plot_status' => $status]);
                 
-                if($plot_sale->plot_status === 'BOOKED')
+                if($status === 'BOOKED')
                 {
-                    $CheckIncome=AgentIncome::where('plot_sale_id',$data['plot_sale_id'])->exists();
-                    if(!$CheckIncome)
-                    {
-                        $agentDG=AgentDGSale::where('agent_id', $plot_sale->agent_id)->first();
 
-                        if(!$agentDG)
-                        {
-                            AgentDGSale::create([
-                                'agent_id' => $plot_sale->agent_id,
-                                'direct' => 1,
-                                'group'=> 1,
-                            ]);
-                        }else
-                        {
-                            $agentDG->update([
-                                'direct' => $agentDG -> direct + 1,
-                                'group' => $agentDG -> group + 1,
-                            ]);
-                        }
+                    // $agentDG=AgentDGSale::where('agent_id', $plot_sale->agent_id)->first();
 
-                        $agentParent=AgentLevels::where('agent_id', $plot_sale->agent_id)->first();
-                        $agentlevel=AgentLevels::where('agent_id', $agentParent->parent_id)->first();
-                        if($agentlevel->level !== "1")
+                    // if(!$agentDG)
+                    // {
+                    //     AgentDGSale::create([
+                    //         'agent_id' => $plot_sale->agent_id,
+                    //         'direct' => 1,
+                    //         'group'=> 1,
+                    //     ]);
+                    // }else
+                    // {
+                    //     $agentDG->update([
+                    //         'direct' => $agentDG -> direct + 1,
+                    //         'group' => $agentDG -> group + 1,
+                    //     ]);
+                    // }
+
+                    $agentDG = AgentDGSale::firstOrCreate(
+                        ['agent_id' => $plot_sale->agent_id],
+                        ['direct' => 0, 'group' => 0]
+                    );
+            
+                    $agentDG->increment('direct');
+                    $agentDG->increment('group');
+
+
+                    $agentlevel=AgentLevels::where('agent_id', $plot_sale->agent_id)->first(); //2
+                    $agentParent=AgentLevels::where('agent_id', $agentlevel->parent_id)->first(); //1
+                    // return 
+                    if($agentlevel->level > "1" && $agentParent->level !== null)
                         {
-                            while($agentParent)
+                            while($agentlevel)
                             {
-                                $agentPDG=AgentDGSale::where('agent_id',$agentParent->parent_id)->first();
+                                $agentPDG=AgentDGSale::where('agent_id',$agentlevel->parent_id)->first();
     
-                                if(!$agentPDG)
-                                {
-                                    AgentDGSale::create([
-                                        'agent_id' => $agentParent->parent_id,
-                                        'direct' => 0,
-                                        'group' => 1,
-                                    ]);
-                                }
-                                else{
-                                    $agentPDG->update([
-                                        'group' => $agentPDG->group + 1,
-                                    ]);
-                                }
+                                $agentPDG = AgentDGSale::firstOrCreate(
+                                    ['agent_id' => $agentlevel->parent_id],
+                                    ['direct' => 0, 'group' => 0]
+                                );
+                                $agentPDG->increment('group');
     
-                                $agentlevel=AgentLevels::where('agent_id', $agentParent->parent_id)->first();
-    
-                                if($agentlevel->level === "1")
+                                $agent=AgentLevels::where('agent_id', $agentlevel->parent_id)->first();
+
+                                if($agent->level === '1')
                                 {
                                     break;
                                 }
-                                $agentParent=$agentlevel;
-                            }    
+                                // if($agent->)
+                                $agentlevel=$agent;
+                            }        
                         }
 
+                    $CheckIncome=AgentIncome::where('plot_sale_id',$data['plot_sale_id'])->first();
+                    if(!$CheckIncome)
+                    {
                         $seller_id=$plot_sale->agent_id;
                     
                         $total_amount = $plot_sale->totalAmount; 
     
                         $agentLevel=AgentLevels::where('agent_id',$seller_id)->first();
-    
+
                         $currentLevel=$agentLevel->level;
-    
+
                         $incomePercentages = [
-                            "1" => 8,
-                            "2" => 3,
-                            "3" => 2,
-                            "4" => 1,
-                            "5" => 1,
-                            "6" => 0.70,
-                            "7" => 0.60,
-                            "8" => 0.40,
-                            "9" => 0.20,
-                            "10" => 0.10
+                            "1" => 8,"2" => 3,"3" => 2,"4" => 1,"5" => 1,"6" => 0.70,"7" => 0.60,"8" => 0.40,"9" => 0.20,"10" => 0.10
                         ];
                         
                         // $levelTables=AgentLevels::get()
