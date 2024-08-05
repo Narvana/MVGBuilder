@@ -14,12 +14,15 @@ class CheckRole
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next,$role): Response
+    public function handle(Request $request, Closure $next, $role): Response
     {
-        if(!Auth::user()->hasRole($role))
-        {
-            return response()->json(['message' => 'Unauthorized, '], 403); 
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user || !$user->hasRole($role)) {
+            return response()->json(['success' => 0, 'error' => 'Unauthorized Role Permission.'], 403);
         }
+
+        // Pass the request to the next middleware and return its response
         return $next($request);
     }
 }
