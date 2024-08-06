@@ -71,7 +71,6 @@ class AgentRegisterController extends Controller
             'contact_no' => $request->contact_no,
             'pancard_no' => $request->pancard_no,
         ]);
-        
 
             if(!$agent)
             {
@@ -140,9 +139,6 @@ class AgentRegisterController extends Controller
                 $level="10";
                 $referral= $agent_level->referral . $request->code ;  
             }
-            // else if{
-
-            // }
 
             $level=AgentLevels::create([
                 'parent_id'=>$agent_id->id,
@@ -177,18 +173,12 @@ class AgentRegisterController extends Controller
         ]);
 
         if ($validator->fails()) {
-            $errors = $validator->errors()->all(); // Get all error messages
-            $formattedErrors = [];
-    
-            foreach ($errors as $error) {
-                $formattedErrors[] = $error;
-            }
-    
+            $errors = $validator->errors()->all();
             return response()->json([
                 'success' => 0,
-                'error' => $formattedErrors[0]
+                'error' => $errors[0] // Return the first error message
             ], 422);
-        }   
+        }  
 
         $credentials = $request->only('identifier', 'password');
         $identifier = $credentials['identifier'];
@@ -217,7 +207,7 @@ class AgentRegisterController extends Controller
         if (!$agent->hasRole('agent')) 
             {
                 // User has the 'admin' role
-                return response()->json(['success'=>0,'error' => 'Unauthorized Login Role. Only Agent can Login'], 401);  
+                return response()->json(['success'=>0,'error' => 'Unauthorized Login Role. Only Agent can Login'], 403);  
             }
         if ($agent && Hash::check($request->password, $agent->password)) {
             // Create a token for the user
@@ -237,6 +227,48 @@ class AgentRegisterController extends Controller
             'error' => 'Invalid credentials or Wrong Password'
         ], 401);
 
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $validator=Validator::make(request()->all(),[
+            'identifier' => 'required|String',
+        ]);
+        if ($validator->fails()) {
+            $errors = $validator->errors()->all();
+            return response()->json([
+                'success' => 0,
+                'error' => $errors[0] // Return the first error message
+            ], 422);
+        }  
+
+        $credentials = $request->only('identifier');
+        $identifier = $credentials['identifier'];
+
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            $agent = AgentRegister::where('email', $identifier)->first();
+        } else {
+            // Otherwise, assume it's a referral code
+            $agent = AgentRegister::where('referral_code', $identifier)->first();
+        }
+
+        $password = 'MVG' . $agent->id .substr(uniqid(), -4); 
+
+        $hashpassword = Hash::make($password);
+
+        $agent->update([
+            'password' => $hashpassword,
+        ]);
+
+        $url = "https://www.fast2sms.com/dev/bulkV2?authorization=JqKpX9IMLieFSUH7sThu5yOElafAPw1N4Cvmc02rgWtGxbnD8jm4zNCQqYpkF8lMaXSU9rWIEeBHDiLj&route=q&message=Welcome%20to%20%20MVG%20,%20your%20new%20Password:%0AReferal%20ID%20:%20{$agent->referral_code}%0APassword%20:%20{$password}&flash=0&numbers={$agent->contact_no}";
+
+        $response = Http::get($url);
+
+        if($response->successful())
+        {
+            return response()->json(['success'=>1, 'response'=>$response->json()],200);
+        }
+        return response()->json(['success'=>0, 'response'=>$response->json()],500);
     }
 
     public function profile(Request $request){

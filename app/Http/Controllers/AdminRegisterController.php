@@ -84,13 +84,13 @@ class AdminRegisterController extends Controller
         {
             return response()->json([
                 'success' => 0,
-                'error' => 'Email don\'t exist'
+                'error' => "Email don't exist"
             ], 401);
         }
         if (!$admin->hasRole('admin')) 
         {
             // User has the 'admin' role
-            return response()->json(['success'=>0,'error' => 'Unauthorized Login Role. Only Admin can Login'], 401);  
+            return response()->json(['success'=>0,'error' => 'Unauthorized Login Role. Only Admin can Login'], 403);  
         }
         if ($admin && Hash::check($request->password, $admin->password)) {
             // Create a token for the user
@@ -117,7 +117,7 @@ class AdminRegisterController extends Controller
         if(!$admin){
             return response()->json([
                 'success' => 0,
-                'error'=>'Unauthorized, Admin not found',
+                'error'=>'Admin details not found',
             ],404);
         }
         return response()->json([

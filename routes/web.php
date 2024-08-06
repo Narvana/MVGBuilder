@@ -17,5 +17,5 @@ Route::get('/', function () {
 });
 
 Route::get('/login', function () {
-    return response()->json(['success'=>0,'message'=>'Unauthorized. Provide Token in this api. If already done then token might be Invalid or Expired Token'],400);
+    return response()->json(['success'=>0,'message'=>'Unauthenticated . Provide Token in this api. If already given then token might be Invalid or Expired Token'],401);
 })->name('login');

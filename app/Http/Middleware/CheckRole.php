@@ -19,7 +19,7 @@ class CheckRole
         $user = Auth::guard('sanctum')->user();
 
         if (!$user || !$user->hasRole($role)) {
-            return response()->json(['success' => 0, 'error' => 'Unauthorized Role Permission.'], 403);
+            return response()->json(['success' => 0, 'error' => 'Unauthorized. Access Denied because of Role Permission.'], 403);
         }
 
         // Pass the request to the next middleware and return its response
