@@ -50,6 +50,8 @@ class PlotController extends Controller
 
             $data=$validator->validated();
 
+           
+
             if($plot){
                 $plot->update($data);
                 return response()->json([
@@ -57,6 +59,10 @@ class PlotController extends Controller
                     'message' => 'Plot updated successfully',
                     'Plot' => $plot
                 ], 201);
+            }
+             if($data['price_from'] > $data['price_to'])
+            {
+                return response()->json(['success'=>0,'error' => 'Price from should be less than Price to'], 400);
             }
             $newPlot=Plot::create($data);
             return response()->json([
@@ -207,7 +213,7 @@ class PlotController extends Controller
                 // Check if there's an existing transaction
                 $existingTransaction = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])->exists();
 
-                $amountPaid = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])->sum('amount');
+                // $amountPaid = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])->sum('amount');
             
                 // If no existing transaction, validate amount and create a new transaction
                 
@@ -228,8 +234,8 @@ class PlotController extends Controller
 
                 } else {
                     // Validate payment amount if there's already an existing transaction
-                    // $amountPaid = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])
-                    //     ->sum(DB::raw('CAST(amount AS UNSIGNED)'));
+                    $amountPaid = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])
+                        ->sum(DB::raw('CAST(amount AS UNSIGNED)'));
             
                     $remainingAmount = $plot_sale->totalAmount - $amountPaid;
             
@@ -269,7 +275,6 @@ class PlotController extends Controller
                 
                 if($status === 'BOOKED')
                 {
-
                     // $agentDG=AgentDGSale::where('agent_id', $plot_sale->agent_id)->first();
 
                     // if(!$agentDG)
@@ -295,71 +300,83 @@ class PlotController extends Controller
                     $agentDG->increment('direct');
                     $agentDG->increment('group');
 
+                    $agentLevel=AgentLevels::where('agent_id', $plot_sale->agent_id)->first(); //2
+                    $Level=$agentLevel;
+                    while ($agentLevel && $agentLevel->parent_id) 
+                    {
+                        $parentLevel = AgentLevels::where('agent_id', $agentLevel->parent_id)->first();
+                        if (!$parentLevel) break;
+            
+                        $agentPDG = AgentDGSale::firstOrCreate(
+                            ['agent_id' => $parentLevel->agent_id],
+                            ['direct' => 0, 'group' => 0]
+                        );
+                        $agentPDG->increment('group');
+                        
+                        $agentLevel = $parentLevel;
+                    }
+            
+                    // $agentParent=AgentLevels::where('agent_id', $agentlevel->parent_id)->first(); //1 
+                    // if($agentlevel->level > "1" && $agentParent->level !== null)
+                    // {
+                    //    while($agentlevel)
+                    //     {
+                    //         $agentPDG=AgentDGSale::where('agent_id',$agentlevel->parent_id)->first();
 
-                    $agentlevel=AgentLevels::where('agent_id', $plot_sale->agent_id)->first(); //2
-                    $agentParent=AgentLevels::where('agent_id', $agentlevel->parent_id)->first(); //1
-                    // return 
-                    if($agentlevel->level > "1" && $agentParent->level !== null)
-                        {
-                            while($agentlevel)
-                            {
-                                $agentPDG=AgentDGSale::where('agent_id',$agentlevel->parent_id)->first();
-    
-                                $agentPDG = AgentDGSale::firstOrCreate(
-                                    ['agent_id' => $agentlevel->parent_id],
-                                    ['direct' => 0, 'group' => 0]
-                                );
-                                $agentPDG->increment('group');
-    
-                                $agent=AgentLevels::where('agent_id', $agentlevel->parent_id)->first();
+                    //         $agentPDG = AgentDGSale::firstOrCreate(
+                    //             ['agent_id' => $agentlevel->parent_id],
+                    //             ['direct' => 0, 'group' => 0]
+                    //         );
+                    //         $agentPDG->increment('group');
 
-                                if($agent->level === '1')
-                                {
-                                    break;
-                                }
-                                // if($agent->)
-                                $agentlevel=$agent;
-                            }        
-                        }
+                    //         $agent=AgentLevels::where('agent_id', $agentlevel->parent_id)->first();
+
+                    //         if($agent->level === '1')
+                    //         {
+                    //             break;
+                    //         }
+                    //         // if($agent->)
+                    //         $agentlevel=$agent;
+                    //     }        
+                    // }
 
                     $CheckIncome=AgentIncome::where('plot_sale_id',$data['plot_sale_id'])->first();
                     if(!$CheckIncome)
                     {
-                        $seller_id=$plot_sale->agent_id;
+                        // $seller_id=$plot_sale->agent_id;
                     
                         $total_amount = $plot_sale->totalAmount; 
     
-                        $agentLevel=AgentLevels::where('agent_id',$seller_id)->first();
+                        // $agentlevel=AgentLevels::where('agent_id',$seller_id)->first();
 
-                        $currentLevel=$agentLevel->level;
-
+                        $currentLevel=$Level->level;
+                        // return response()->json($currentLevel);
+                        
                         $incomePercentages = [
                             "1" => 8,"2" => 3,"3" => 2,"4" => 1,"5" => 1,"6" => 0.70,"7" => 0.60,"8" => 0.40,"9" => 0.20,"10" => 0.10
                         ];
                         
                         // $levelTables=AgentLevels::get()
-                        while ($agentLevel) {
-    
+                        while ($Level) {
                             $total_income = ($incomePercentages[$currentLevel] / 100) * $total_amount;
-                            $pancard= AgentRegister::find($agentLevel->agent_id);
+                            $pancard= AgentRegister::find($Level->agent_id);
                             AgentIncome::create([
                                 'plot_sale_id' => $plot_sale->id, 
-                                'final_agent' => $agentLevel->agent_id,
+                                'final_agent' => $Level->agent_id,
                                 'total_income' => $total_income,
                                 'tds_deduction' => $total_income * 0.05,  // Assuming a TDS of 5%
                                 'final_income' => $total_income - ($total_income * 0.05),
                                 'pancard_status' => $pancard->pancard_no ? 1 : 0 ,  // Assuming you have this value
                             ]);
     
-                            $parentID = $agentLevel->parent_id;
+                            $parentID = $Level->parent_id;
                     
                             $agentExist = AgentLevels::where('agent_id', $parentID)->first();
                     
                             if ($agentExist) {
-                                $agentLevel = $agentExist;
-                                $currentLevel=$agentLevel->level;
+                                $Level = $agentExist;
+                                $currentLevel=$Level->level;
                             } else {
-                                // Stop the execution if the parent ID does not exist
                                 break;
                             }
                         }
@@ -390,6 +407,7 @@ class PlotController extends Controller
         // $sales = DB::table('plot_sales')->get();
         $sales = DB::table('plot_sales')
             ->leftJoin('plots', 'plot_sales.plot_id', '=', 'plots.id')
+            ->leftJoin('plot_transactions','plot_transactions.plot_sale_id','=','plot_sales.id')
             ->leftJoin('client_controllers', 'plot_sales.client_id', '=', 'client_controllers.id')
             ->leftJoin('agent_registers', 'plot_sales.agent_id', '=', 'agent_registers.id')
             ->select(
@@ -403,9 +421,21 @@ class PlotController extends Controller
                     'client_controllers.client_name',  // Replace 'client_name' with the actual column name you want from the clients table
                     'plot_sales.initial_amount',
                     'plot_sales.totalAmount',
-                    DB::raw('ROUND(plot_sales.totalAmount * (plot_sales.plot_value / 100), 2) AS calculated_value'),
+                    DB::raw('ROUND(SUM(plot_transactions.amount), 2) AS calculated_value'),
                     'plot_sales.plot_status',
                     'plot_sales.plot_value',
+                )->groupBy(
+                    'plot_sales.id',
+                    'plots.plot_No',
+                    'plots.plot_type',
+                    'plots.plot_area',
+                    'plots.price_from',
+                    'plots.price_to',
+                    'client_controllers.client_name',
+                    'plot_sales.initial_amount',
+                    'plot_sales.totalAmount',
+                    'plot_sales.plot_status',
+                    'plot_sales.plot_value'
                 )
     ->get();
      if(!$sales){
