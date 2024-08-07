@@ -48,6 +48,10 @@ Route::middleware(['auth:sanctum','role:agent'])->group(function () {
    
     Route::get('/level', [AgentRegisterController::class, 'showLevel']);
 
+    Route::get('/show/Site/agent',[SiteController::class,'showSite']);
+    
+    Route::get('/show/Plot/agent',[PlotController::class,'showPlot']);
+
     // map
     Route::get('show/map/level', [AgentRegisterController::class, 'showMap']);
 
@@ -76,20 +80,32 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
 
     Route::delete('/remove/Plot',[PlotController::class,'removePlot']);
 
+    Route::get('/show/Site/admin',[SiteController::class,'showSite']);
+    
+    Route::get('/show/Plot/admin',[PlotController::class,'showPlot']);
+
+    Route::get('/show/Client/admin',[ClientControllerController::class,'showClient']);
+
     Route::delete('remove/Client',[ClientControllerController::class,'removeClient']);
     // 
     Route::post('/plot/transaction',[PlotController::class,'PlotTransaction']);
 
+    Route::get('/show/Plot/Sales/admin',[PlotController::class,'showPlotSales']);
+
     Route::delete('remove/Agent',[AgentRegisterController::class,'removeAgent']);
+
+    Route::get('/show/Agents/admin',[AgentRegisterController::class,'showAllAgents']);
 });
 
-Route::get('/show/Site',[SiteController::class,'showSite']);
+// Route::get('/show/Site',[SiteController::class,'showSite']);
 
-Route::get('/show/Plot',[PlotController::class,'showPlot']);
+// Route::get('/show/Plot',[PlotController::class,'showPlot']);
 
-Route::get('/show/Client',[ClientControllerController::class,'showClient']);
+// Route::get('/show/Client',[ClientControllerController::class,'showClient']);
 
-Route::get('/show/Plot/Sales',[PlotController::class,'showPlotSales']);
+// Route::get('/show/Plot/Sales',[PlotController::class,'showPlotSales']);
 
-Route::get('/show/Agents',[AgentRegisterController::class,'showAllAgents']);
+// Route::get('/show/Agents',[AgentRegisterController::class,'showAllAgents']);
 
+// Forgot Password
+Route::post('/forgot/Password/agent', [AgentRegisterController::class, 'forgotPassword']);
