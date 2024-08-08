@@ -28,5 +28,6 @@ class AgentRegister extends Model
         'pancard_no',
         'contact_no',
         'address',
+        'designation'
     ];
 }

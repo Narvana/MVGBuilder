@@ -10,8 +10,12 @@ class AgentDGSale extends Model
     use HasFactory;
 
     protected $fillable=[
-        'agent_id',
-        'direct',
-        'group'
+        'agent_id', 
+        'direct', 
+        'group', 
+        'designation', 
+        'incentive', 
+        'tds_deduction', 
+        'final_incentive'
     ];
 }

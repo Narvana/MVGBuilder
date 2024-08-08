@@ -46,6 +46,7 @@ Route::middleware(['auth:sanctum','role:agent'])->group(function () {
 
     Route::post('/updateClient/agent',[ClientControllerController::class,'updateClient']);
    
+    // No use
     Route::get('/level', [AgentRegisterController::class, 'showLevel']);
 
     Route::get('/show/Site/agent',[SiteController::class,'showSite']);
