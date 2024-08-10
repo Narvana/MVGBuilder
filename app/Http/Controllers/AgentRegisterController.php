@@ -104,7 +104,7 @@ class AgentRegisterController extends Controller
         else{
             $level= $level;
             $referral= $agent_level->referral  . $request->code;  
-            return response()->json([$level , $referral]);
+            // return response()->json([$level , $referral]);
         }
 
         $level=AgentLevels::create([
