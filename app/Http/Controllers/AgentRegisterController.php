@@ -87,7 +87,7 @@ class AgentRegisterController extends Controller
             $code = 'MVG' . $agent->id . 'L' . $level . $level;
         }
 
-            return response()->json($code);
+            // return response()->json($code);
 
         $agent->update([
             'referral_code' => $code,
