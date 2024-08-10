@@ -104,7 +104,7 @@ class AgentRegisterController extends Controller
         else{
             $level= $level;
             $referral= $agent_level->referral  . $request->code;  
-            // return response()->json([$level , $referral]);
+            return response()->json([$level , $referral]);
         }
 
         $level=AgentLevels::create([
@@ -122,6 +122,7 @@ class AgentRegisterController extends Controller
             // 'Sms Response'=>$response->json()
             return response()->json(['success' => 1, 'data' => $agent,'level'=>$level,
         ], 201);
+
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['success' => 0, 'error' => 'Internal Server Error. ' . $e->getMessage()], 500);
@@ -462,7 +463,10 @@ class AgentRegisterController extends Controller
     {
         $user=Auth::guard('sanctum')->user();
         
-        $level1Agents = AgentLevels::where('referral', 'like', '%' . $user->referral_code . '%')->with('agent')->orderBy('level','asc')->get();
+        $level1Agents = AgentLevels::where('referral', 'like', '%' . $user->referral_code . '%')
+        ->with('agent')
+        ->orderByRaw('CAST(level AS UNSIGNED) ASC')
+        ->get();
           
         if($level1Agents->isEmpty())
         {
@@ -476,7 +480,7 @@ class AgentRegisterController extends Controller
             ];
         }
 
-        return response()->json(['success'=>1,'downAgent'=>$agentsHierarchy]);
+        return response()->json(['success'=>1,'downAgent'=> $agentsHierarchy]);
     }
 
     public function agentIncome(Request $request)
