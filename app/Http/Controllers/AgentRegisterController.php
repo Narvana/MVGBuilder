@@ -243,6 +243,10 @@ class AgentRegisterController extends Controller
     public function profile(Request $request){
         $agent = Auth::guard('sanctum')->user();
 
+        $agentLevel = AgentLevels::where('agent_id',$agent->id)->first();
+
+        $agentParent = AgentRegister::where('id',$agentLevel->parent_id)->first(); 
+
         if(!$agent){
             return response()->json([
                 'success' => 0,
@@ -252,6 +256,7 @@ class AgentRegisterController extends Controller
         return response()->json([
             'success' => 1,
             'agent' => $agent,
+            'sponser_name' => $agentParent->fullname,'sponser_referralCode' => $agentParent->referral_code
         ], 200);
     }
 
