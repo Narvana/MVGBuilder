@@ -52,16 +52,9 @@ class AgentRegisterController extends Controller
             ], 422);
         }
 
-
         $agent_id=AgentRegister::where('referral_code',$request->code)->first();
-        // $agent_id=
+
         $agent_level=AgentLevels::where('agent_id',$agent_id->id)->first();
-
-        if($agent_level?->level==="10")
-        {
-            return response()->json(['success'=>0,'error'=>"You don't have the access to register New Agent"]);
-        }
-
 
         $agent = AgentRegister::create([
             'fullname' => $request->fullname,
@@ -72,88 +65,63 @@ class AgentRegisterController extends Controller
             'pancard_no' => $request->pancard_no,
         ]);
 
-            if(!$agent)
-            {
-                return response()->json([
-                    'success' => 0,
-                    'error' => 'Agent Not Registered. Call to Support System'
-                ],400);
-            }
+        if(!$agent)
+        {
+            return response()->json([
+                'success' => 0,
+                'error' => 'Agent Not Registered. Call to Support System'
+            ],400);
+        }
 
-            $level = $agent_level ? intval($agent_level->level) + 1 : 1;
-            $code = 'MVG' . 'L' . $level . $agent->id;
+         $level = $agent_level ? intval($agent_level->level) + 1 : 1;
 
-            $agent->update([
-                'referral_code' => $code,
-            ]);   
 
-            $agent->assignRole('agent');
+        if(strlen($level) === 1)
+        {
 
-            if($agent_id->referral_code === "0")
-            {
-                $level = 1;
-                $referral="0";
-            }
-            else if($agent_level->level === "1" )
-            {
-                $level=2;
-                $referral= $agent_level->referral . $request->code ;   
-            }
-            else if($agent_level->level=== "2")
-            {
-                $level= "3";
-                $referral= $agent_level->referral . $request->code ;  
-            }
-            else if($agent_level->level=== "3")
-            {
-                $level= "4";
-                $referral= $agent_level->referral . $request->code ;  
-            }
-            else if($agent_level->level==="4")
-            {
-                $level="5";
-                $referral= $agent_level->referral . $request->code ;  
-            }
-            else if($agent_level->level==="5")
-            {
-                $level="6";
-                $referral= $agent_level->referral . $request->code ;  
-            }
-            else if($agent_level->level==="6")
-            {
-                $level="7";
-                $referral= $agent_level->referral . $request->code ;  
-            }
-            else if($agent_level->level==="7")
-            {
-                $level="8";
-                $referral= $agent_level->referral . $request->code ;  
-            }
-            else if($agent_level->level==="8")
-            {
-                $level="9";
-                $referral= $agent_level->referral . $request->code ;  
-            }
-            else if($agent_level->level==="9")
-            {
-                $level="10";
-                $referral= $agent_level->referral . $request->code ;  
-            }
+            $new = '0' . $level;
+            $code = 'MVG' . $agent->id . 'L' . $level . $new;
 
-            $level=AgentLevels::create([
-                'parent_id'=>$agent_id->id,
-                'agent_id'=>$agent->id,
-                'level'=> $level,
-                'referral'=>$referral
-            ]);
+        }else if(strlen($level)>1)
+        {
+            $code = 'MVG' . $agent->id . 'L' . $level . $level;
+        }
 
-            DB::commit();
+            return response()->json($code);
 
-            $url = "https://www.fast2sms.com/dev/bulkV2?authorization=JqKpX9IMLieFSUH7sThu5yOElafAPw1N4Cvmc02rgWtGxbnD8jm4zNCQqYpkF8lMaXSU9rWIEeBHDiLj&route=q&message=Welcome%20to%20%20MVG%20Builders,%20your%20details%20are:%0AReferal%20ID%20:%20{$agent->referral_code}%0APassword%20:%20{$request->password}&flash=0&numbers={$agent->contact_no}";
+        $agent->update([
+            'referral_code' => $code,
+        ]);   
 
-            $response = Http::get($url);
+        $agent->assignRole('agent');
 
-            return response()->json(['success' => 1, 'data' => $agent,'level'=>$level,'Sms Response'=>$response->json()], 201);
+        if($agent_id->referral_code === "0")
+        {
+            $level = 1;
+            $referral="0";
+            // return response()->json([$level , $referral])
+        }
+        else{
+            $level= $level;
+            $referral= $agent_level->referral  . $request->code;  
+            // return response()->json([$level , $referral]);
+        }
+
+        $level=AgentLevels::create([
+            'parent_id'=>$agent_id->id,
+            'agent_id'=>$agent->id,
+            'level'=> $level,
+            'referral'=>$referral
+        ]);
+
+        DB::commit();
+
+            // $url = "https://www.fast2sms.com/dev/bulkV2?authorization=JqKpX9IMLieFSUH7sThu5yOElafAPw1N4Cvmc02rgWtGxbnD8jm4zNCQqYpkF8lMaXSU9rWIEeBHDiLj&route=q&message=Welcome%20to%20%20MVG%20Builders,%20your%20details%20are:%0AReferal%20ID%20:%20{$agent->referral_code}%0APassword%20:%20{$request->password}&flash=0&numbers={$agent->contact_no}";
+
+            // $response = Http::get($url);
+            // 'Sms Response'=>$response->json()
+            return response()->json(['success' => 1, 'data' => $agent,'level'=>$level,
+        ], 201);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['success' => 0, 'error' => 'Internal Server Error. ' . $e->getMessage()], 500);
