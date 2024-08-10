@@ -297,7 +297,8 @@ class AgentRegisterController extends Controller
             'email' => 'nullable|string|email|unique:agent_registers,email',
             'pancard_no' => 'nullable|string|min:10|max:10|unique:agent_registers,pancard_no',
             'contact_no' => 'nullable|string|min:10|max:10|unique:agent_registers,contact_no',
-            'address'=>  'sometimes|string' 
+            'address'=>  'nullable|string',
+            'DOB' => 'nullable|date'
         ]);
 
         if ($validator->fails()) {
