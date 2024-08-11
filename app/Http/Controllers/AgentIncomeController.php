@@ -18,21 +18,26 @@ class AgentIncomeController extends Controller
     public function agentIncome(Request $request)
     {
 
-        $params=$request->query('agent_id');
+        $params=Auth::guard('sanctum')->user();
 
         $income = DB::table('agent_incomes')
         ->leftJoin('plot_sales', 'agent_incomes.plot_sale_id', '=', 'plot_sales.id')
         ->leftJoin('plots', 'plot_sales.plot_id', '=', 'plots.id')
+        // ->leftJoin()
         ->select(
                  'plot_sales.plot_id',
                  'plots.plot_No',
                  'plots.plot_type',
-                    'plot_sales.totalAmount',
-                    'agent_incomes.total_income',
-                    'agent_incomes.tds_deduction',
-                    'agent_incomes.final_income',
-                    'agent_incomes.transaction_status',
-                )->where('agent_incomes.final_agent',$params)->get();
+                 'plot_sales.totalAmount',
+                 'agent_incomes.total_income',
+                 'agent_incomes.tds_deduction',
+                 'agent_incomes.final_income',
+                 'agent_incomes.transaction_status',
+                 DB::raw('CASE 
+                 WHEN agent_incomes.final_agent = plot_sales.agent_id THEN "direct"
+                    ELSE "group"
+                 END AS income_type')
+                )->where('agent_incomes.final_agent',$params->id)->get();
 
         if($income->isEmpty())
         {

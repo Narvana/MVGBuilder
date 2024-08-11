@@ -7,6 +7,7 @@ use App\Http\Controllers\ClientControllerController;
 use App\Http\Controllers\PlotController;
 use App\Http\Controllers\SiteController;
 use App\Models\AgentIncome;
+use App\Models\PlotTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -64,6 +65,8 @@ Route::middleware(['auth:sanctum','role:agent'])->group(function () {
     Route::get('/agent/Client/Info', [AgentRegisterController::class, 'agentClientInfo']);
 
     Route::get('/Agent/Sales',[AgentIncomeController::class,'agentSales']);
+
+    Route::get('/Agent/DG/Sales',[PlotController::class,'AgentDGsale']);
 
 });
 
