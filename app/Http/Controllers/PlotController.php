@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\AgentDGSale;
 use App\Models\AgentIncome;
@@ -274,23 +275,6 @@ class PlotController extends Controller
                 
                 if($status === 'BOOKED')
                 {
-                    // $agentDG=AgentDGSale::where('agent_id', $plot_sale->agent_id)->first();
-
-                    // if(!$agentDG)
-                    // {
-                    //     AgentDGSale::create([
-                    //         'agent_id' => $plot_sale->agent_id,
-                    //         'direct' => 1,
-                    //         'group'=> 1,
-                    //     ]);
-                    // }else
-                    // {
-                    //     $agentDG->update([
-                    //         'direct' => $agentDG -> direct + 1,
-                    //         'group' => $agentDG -> group + 1,
-                    //     ]);
-                    // }
-
                     $agentDG = AgentDGSale::firstOrCreate(
                         ['agent_id' => $plot_sale->agent_id],
                         ['direct' => 0, 'group' => 0]
@@ -298,135 +282,200 @@ class PlotController extends Controller
             
                     $agentDG->increment('direct');
 
-                    // $agent=AgentRegister::where('id',$plot_sale->agent_id)->first();
+                    $agent=AgentRegister::where('id',$plot_sale->agent_id)->first();
 
-                    // if($agentDG->designation === 'ASSOCIATE')
-                    // {
-                    //     if($agentDG->direct >= 2  && $agentDG->group >= 8 )
-                    //     {
-                    //         $incentive= 10 * 5000;
-                    //         $tds=$incentive * 0.05;
-                    //         $final=$incentive - $tds;
-                    //         $agent->update([
-                    //             'designation'=>"MANAGER"
-                    //         ]);
-                    //         $agentDG->update([
-                    //             'designation'=>"MANAGER",
-                    //             'incentive' =>  $incentive,
-                    //             'tds_deduction' => $tds,
-                    //             'final_incentive' => $final
-                    //         ]);
-                    //     }    
-                    // }
-                    // if($agentDG->designation === 'MANAGER')
-                    // {
-                    //     if($agentDG->direct >= 6  && $agentDG->group >= 36 )
-                    //     {
-                    //         $incentive= 32 * 3000;
-                    //         $tds=$incentive * 0.05;
-                    //         $final=$incentive - $tds;
-                    //         $agent->update([
-                    //             'designation'=>'SM'
-                    //         ]);
-                    //         $agentDG->update([
-                    //             'designation'=>"SM",
-                    //             'incentive' =>  $incentive,
-                    //             'tds_deduction' => $tds,
-                    //             'final_incentive' => $final
-                    //         ]);
-                    //     }
-                    // }
-                    // if($agentDG->designation === 'SM')
-                    // {
-                    //     $downLevel=DB::table('agent_levels')
-                    //     ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
-                    //     ->select(
-                    //         'agent_registers.designation'
-                    //     )->where('agent_levels.referral', 'like', '%' . $agent->referral_code . '%')
-                    //     ->where('agent_registers.designation','MANAGER')->count();
+                    if($agentDG->designation === 'ASSOCIATE')
+                    {
+                        if($agentDG->direct >= 2  && $agentDG->group >= 8 )
+                        {
+                            $downAgent=AgentLevels::where('parent_id',$agent->id)->get();
+
+                            foreach ($downAgent as $dagent) 
+                            {
+                                // Access each agent's properties
+                               $agentID=$dagent->agent_id;
+                               $DGsale=AgentDGSale::where('agent_id',$agentID)->first();
+                               $Total=$DGsale->direct + $DGsale->group;
+                               if($Total >= 4)
+                               {
+                                    $incentive= 10 * 5000;
+                                    $tds=$incentive * 0.05;
+                                    $final=$incentive - $tds;
+                                    $agent->update([
+                                        'designation'=>"MANAGER"
+                                    ]);
+                                    $agentDG->update([
+                                        'designation'=>"MANAGER",
+                                        'incentive' =>  $incentive,
+                                        'tds_deduction' => $tds,
+                                        'final_incentive' => $final
+                                    ]);
+                                 break; 
+                               }
+                            }
+    
+                        }
+                    }
+                    if($agentDG->designation === 'MANAGER')
+                    {
+                       if($agentDG->direct >= 6  && $agentDG->group >= 36)
+                        {
+                            $downAgent=AgentLevels::where('parent_id',$agent->id)->get();
+
+                            foreach ($downAgent as $dagent) 
+                            {
+                                // Access each agent's properties
+                               $agentID=$dagent->agent_id;
+                               $DGsale=AgentDGSale::where('agent_id',$agentID)->first();
+                               $Total=$DGsale->direct + $DGsale->group;
+                               if($Total >= 18 )
+                               {
+                                    $incentive= 32 * 3000;
+                                    $tds=$incentive * 0.05;
+                                    $final=$incentive - $tds;
+                                    $agent->update([
+                                        'designation'=>'SM'
+                                    ]);
+                                    $agentDG->update([
+                                        'designation'=>"SM",
+                                        'incentive' =>  $incentive,
+                                        'tds_deduction' => $tds,
+                                        'final_incentive' => $final
+                                    ]);
+                                    break;
+                                } 
+                            }
+                        }
+                    }
+                    if($agentDG->designation === 'SM')
+                    {
+                      $downLevel=DB::table('agent_levels')
+                      ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
+                      ->select(
+                        'agent_registers.designation'
+                        )->where('agent_levels.referral', 'like', '%' . $agent->referral_code . '%')
+                        ->where('agent_registers.designation','MANAGER')->count();
                         
-                    //    if($downLevel >= 2)
-                    //    {
-                    //     if($agentDG->direct >= 11  && $agentDG->group >= 114 )
-                    //      {
-                    //         $incentive= 83 * 2000;
-                    //         $tds=$incentive * 0.05;
-                    //         $final=$incentive - $tds;
-                    //         $agent->update([
-                    //             'designation'=>'AGM'
-                    //         ]);
-                    //         $agentDG->update([
-                    //             'designation'=>"AGM",
-                    //             'incentive' =>  $incentive,
-                    //             'tds_deduction' => $tds,
-                    //             'final_incentive' => $final
-                    //         ]);
-                    //      }
-                    //    }
-                        
-                    // }
-                    // if($agentDG->designation === 'AGM')
-                    // {
-                    //     $downLevel=DB::table('agent_levels')
-                    //     ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
-                    //     ->select(
-                    //         DB::raw('COUNT(CASE WHEN agent_registers.designation = "AGM" THEN 1 END) as AGM_count'),
-                    //         DB::raw('COUNT(CASE WHEN agent_registers.designation = "SM" THEN 1 END) as sm_count')
-                    //     )->where('agent_levels.referral', 'like', '%' . $agent->referral_code . '%')->first(); 
+                       if($downLevel >= 2)
+                       {
+                            if($agentDG->direct >= 11  && $agentDG->group >= 114 )
+                            { 
+                                $downAgent=AgentLevels::where('parent_id',$agent->id)->get();
+                                
+                                foreach ($downAgent as $dagent) 
+                                {
+                                    // Access each agent's properties
+                                    $agentID=$dagent->agent_id;
+                                    $DGsale=AgentDGSale::where('agent_id',$agentID)->first();
+                                    $Total=$DGsale->direct + $DGsale->group;
                                     
-                    //   if($downLevel->AGM_count >= 1 && $downLevel->sm_count >=2 )
-                    //   {
-                    //     if($agentDG->direct >= 17  && $agentDG->group >= 282 )
-                    //     {
-                    //       $incentive= 174 * 1500;
-                    //       $tds=$incentive * 0.05;
-                    //       $final=$incentive - $tds;
-                    //       $agent->update([
-                    //           'designation'=>'GM'
-                    //       ]);
-                    //       $agentDG->update([
-                    //           'designation'=>"GM",
-                    //           'incentive' =>  $incentive,
-                    //           'tds_deduction' => $tds,
-                    //           'final_incentive' => $final,
-                    //         //   'salary' => 40000,
-                    //       ]);
-                    //     } 
-                    //   }
+                                    if($Total >= 57)
+                                    {
+                                        $incentive= 83 * 2000;
+                                        $tds=$incentive * 0.05;
+                                        $final=$incentive - $tds;
+                                        $agent->update([
+                                            'designation'=>'AGM'
+                                        ]);
+                                        $agentDG->update([
+                                            'designation'=>"AGM",
+                                            'incentive' =>  $incentive,
+                                            'tds_deduction' => $tds,
+                                            'final_incentive' => $final
+                                        ]);
+
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if($agentDG->designation === 'AGM')
+                    {
+                        $downLevel=DB::table('agent_levels')
+                        ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
+                        ->select(
+                            DB::raw('COUNT(CASE WHEN agent_registers.designation = "AGM" THEN 1 END) as AGM_count'),
+                            DB::raw('COUNT(CASE WHEN agent_registers.designation = "SM" THEN 1 END) as sm_count')
+                        )->where('agent_levels.referral', 'like', '%' . $agent->referral_code . '%')->first(); 
+                                    
+                      if($downLevel->AGM_count >= 1 && $downLevel->sm_count >=2 )
+                      {
+                        if($agentDG->direct >= 17  && $agentDG->group >= 282 )
+                        {
+                            $downAgent=AgentLevels::where('parent_id',$agent->id)->get();
+
+                            foreach ($downAgent as $dagent) 
+                            {
+                                // Access each agent's properties
+                               $agentID=$dagent->agent_id;
+                               $DGsale=AgentDGSale::where('agent_id',$agentID)->first();
+                               $Total=$DGsale->direct + $DGsale->group;
+                               if($Total >= 141)
+                               {
+                                    $incentive= 174 * 1500;
+                                    $tds=$incentive * 0.05;
+                                    $final=$incentive - $tds;
+                                    $agent->update([
+                                        'designation'=>'GM'
+                                    ]);
+                                    $agentDG->update([
+                                        'designation'=>"GM",
+                                        'incentive' =>  $incentive,
+                                        'tds_deduction' => $tds,
+                                        'final_incentive' => $final,
+                                    //   'salary' => 40000,
+                                    ]);
+                                    break;
+                                }
+                            }
+                        } 
+                      }
 
 
-                    // }
-                    // if($agentDG->designation === 'GM')
-                    // {
-                    //     $downLevel=DB::table('agent_levels')
-                    //     ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
-                    //     ->select(
-                    //         DB::raw('COUNT(CASE WHEN agent_registers.designation = "AGM" THEN 1 END) as AGM_count'),
-                    //         DB::raw('COUNT(CASE WHEN agent_registers.designation = "SM" THEN 1 END) as sm_count')
-                    //     )->where('agent_levels.referral', 'like', '%' . $agent->referral_code . '%')->first(); 
+                    }
+                    if($agentDG->designation === 'GM')
+                    {
+                        $downLevel=DB::table('agent_levels')
+                        ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
+                        ->select(
+                            DB::raw('COUNT(CASE WHEN agent_registers.designation = "AGM" THEN 1 END) as AGM_count'),
+                            DB::raw('COUNT(CASE WHEN agent_registers.designation = "SM" THEN 1 END) as sm_count')
+                        )->where('agent_levels.referral', 'like', '%' . $agent->referral_code . '%')->first(); 
 
-                    //   if($downLevel->AGM_count >= 2 && $downLevel->sm_count >=4 )
-                    //   {
-                    //     if($agentDG->direct >= 24  && $agentDG->group >= 600 )
-                    //     {
-                    //         $incentive= 325 * 1000;
-                    //         $tds=$incentive * 0.05;
-                    //         $final=$incentive - $tds;
-                    //         $agent->update([
-                    //             'designation'=>'SGM'
-                    //         ]);
-                    //         $agentDG->update([
-                    //             'designation'=>"SGM",
-                    //             'incentive' =>  $incentive,
-                    //             'tds_deduction' => $tds,
-                    //             'final_incentive' => $final,
-                    //             'salary' => 70000,
-                    //         ]);
-                    //     }
-                    //   }
-                    // }
+                      if($downLevel->AGM_count >= 2 && $downLevel->sm_count >=4 )
+                      {
+                        if($agentDG->direct >= 24  && $agentDG->group >= 600 )
+                        {
+                            $downAgent=AgentLevels::where('parent_id',$agent->id)->get();
 
-
+                            foreach ($downAgent as $dagent) 
+                            {
+                                // Access each agent's properties
+                               $agentID=$dagent->agent_id;
+                               $DGsale=AgentDGSale::where('agent_id',$agentID)->first();
+                               $Total=$DGsale->direct + $DGsale->group;
+                               if($Total >= 300)
+                               {
+                                    $incentive= 325 * 1000;
+                                    $tds=$incentive * 0.05;
+                                    $final=$incentive - $tds;
+                                    $agent->update([
+                                        'designation'=>'SGM'
+                                    ]);
+                                    $agentDG->update([
+                                        'designation'=>"SGM",
+                                        'incentive' =>  $incentive,
+                                        'tds_deduction' => $tds,
+                                        'final_incentive' => $final,
+                                        // 'salary' => 70000,
+                                    ]);
+                                    break;
+                                }
+                            }
+                        }
+                      }
+                    }
 
                     $agentLevel=AgentLevels::where('agent_id', $plot_sale->agent_id)->first(); //2
                     $Level=$agentLevel;
@@ -440,131 +489,191 @@ class PlotController extends Controller
                             ['direct' => 0, 'group' => 0]
                         );
                         $agentPDG->increment('group');
-                        // $agentParent=AgentRegister::where('id',$agentLevel->parent_id)->first();
+
+                        $agentParent=AgentRegister::where('id',$agentLevel->parent_id)->first();
                        
-                        // if($agentPDG->designation === 'ASSOCIATE')
-                        // {
-                        //     if($agentPDG->direct >= 2  && $agentPDG->group >=8 )
-                        //     {
-                        //         $incentive= 10 * 5000;
-                        //         $tds=$incentive * 0.05;
-                        //         $final=$incentive - $tds;
-                        //         $agentParent->update([
-                        //             'designation'=>'MANAGER'
-                        //         ]);
-                        //         $agentPDG->update([
-                        //             'designation'=>"MANAGER",
-                        //             'incentive' =>  $incentive,
-                        //             'tds_deduction' => $tds,
-                        //             'final_incentive' => $final
-                        //         ]);
-                        //     }    
-                        // }
-                        // if($agentPDG->designation === 'MANAGER')
-                        // {
-                        //     if($agentPDG->direct >= 6  && $agentPDG->group >= 36 )
-                        //     {
-                        //         $incentive= 32 * 3000;
-                        //         $tds=$incentive * 0.05;
-                        //         $final=$incentive - $tds;
-                        //         $agentParent->update([
-                        //             'designation'=>'SM'
-                        //         ]);
-                        //         $agentPDG->update([
-                        //             'designation'=>"SM",
-                        //             'incentive' =>  $incentive,
-                        //             'tds_deduction' => $tds,
-                        //             'final_incentive' => $final
-                        //         ]);
-                        //     }
-                        // }
-                        // if($agentPDG->designation === 'SM')
-                        // {
-                        //     $downLevel=DB::table('agent_levels')
-                        //     ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
-                        //     ->select(
-                        //         'agent_registers.designation'
-                        //     )->where('agent_levels.referral', 'like', '%' . $agentParent->referral_code . '%')
-                        //     ->where('agent_registers.designation','MANAGER')->count();
+                        if($agentPDG->designation === 'ASSOCIATE')
+                        {
+                            if($agentPDG->direct >= 2  && $agentPDG->group >=8)
+                            {
+                                $downAgent=AgentLevels::where('parent_id',$agentParent->id)->get();
+
+                                foreach ($downAgent as $dagent) 
+                                {
+                                    // Access each agent's properties
+                                   $agentID=$dagent->agent_id;
+                                   $DGsale=AgentDGSale::where('agent_id',$agentID)->first();
+                                   $Total=$DGsale->direct + $DGsale->group;
+                                   if($Total >= 4)
+                                   {
+                                        $incentive= 10 * 5000;
+                                        $tds=$incentive * 0.05;
+                                        $final=$incentive - $tds;
+                                        $agentParent->update([
+                                            'designation'=>'MANAGER'
+                                        ]);
+                                        $agentPDG->update([
+                                            'designation'=>"MANAGER",
+                                            'incentive' =>  $incentive,
+                                            'tds_deduction' => $tds,
+                                            'final_incentive' => $final
+                                        ]);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if($agentPDG->designation === 'MANAGER')
+                        {
+                            if($agentPDG->direct >= 6  && $agentPDG->group >= 36 )
+                            {
+                                $downAgent=AgentLevels::where('parent_id',$agentParent->id)->get();
+
+                                foreach ($downAgent as $dagent) 
+                                {
+                                    // Access each agent's properties
+                                   $agentID=$dagent->agent_id;
+                                   $DGsale=AgentDGSale::where('agent_id',$agentID)->first();
+                                   $Total=$DGsale->direct + $DGsale->group;
+                                   if($Total >= 18)
+                                   {
+                                    $incentive= 32 * 3000;
+                                    $tds=$incentive * 0.05;
+                                    $final=$incentive - $tds;
+                                    $agentParent->update([
+                                        'designation'=>'SM'
+                                    ]);
+                                    $agentPDG->update([
+                                        'designation'=>"SM",
+                                        'incentive' =>  $incentive,
+                                        'tds_deduction' => $tds,
+                                        'final_incentive' => $final
+                                    ]);
+                                   } 
+                                }
+                            }
+                        }
+                        if($agentPDG->designation === 'SM')
+                        {
+                            $downLevel=DB::table('agent_levels')
+                            ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
+                            ->select(
+                                'agent_registers.designation'
+                            )->where('agent_levels.referral', 'like', '%' . $agentParent->referral_code . '%')
+                            ->where('agent_registers.designation','MANAGER')->count();
                             
-                        //    if($downLevel >= 2)
-                        //    {
-                        //     if($agentPDG->direct >= 11  && $agentPDG->group >= 114 )
-                        //      {
-                        //         $incentive= 83 * 2000;
-                        //         $tds=$incentive * 0.05;
-                        //         $final=$incentive - $tds;
-                        //         $agentParent->update([
-                        //             'designation'=>'AGM'
-                        //         ]);
-                        //         $agentPDG->update([
-                        //             'designation'=>"AGM",
-                        //             'incentive' =>  $incentive,
-                        //             'tds_deduction' => $tds,
-                        //             'final_incentive' => $final
-                        //         ]);
-                        //      }
-                        //    }
+                           if($downLevel >= 2)
+                           {
+                               if($agentPDG->direct >= 11  && $agentPDG->group >= 114 )
+                                {
+                                    $downAgent=AgentLevels::where('parent_id',$agentParent->id)->get();
+
+                                    foreach ($downAgent as $dagent) 
+                                    {
+                                        // Access each agent's properties
+                                       $agentID=$dagent->agent_id;
+                                       $DGsale=AgentDGSale::where('agent_id',$agentID)->first();
+                                       $Total=$DGsale->direct + $DGsale->group;
+                                       if($Total >= 57)
+                                       {
+                                        $incentive= 83 * 2000;
+                                        $tds=$incentive * 0.05;
+                                        $final=$incentive - $tds;
+                                        $agentParent->update([
+                                            'designation'=>'AGM'
+                                        ]);
+                                        $agentPDG->update([
+                                            'designation'=>"AGM",
+                                            'incentive' =>  $incentive,
+                                            'tds_deduction' => $tds,
+                                            'final_incentive' => $final
+                                        ]);
+                                       }
+                                    }
+                                }
+                            }
                             
-                        // }
-                        // if($agentPDG->designation === 'AGM')
-                        // {
-                        //     $downLevel=DB::table('agent_levels')
-                        //     ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
-                        //     ->select(
-                        //         DB::raw('COUNT(CASE WHEN agent_registers.designation = "AGM" THEN 1 END) as AGM_count'),
-                        //         DB::raw('COUNT(CASE WHEN agent_registers.designation = "SM" THEN 1 END) as sm_count')
-                        //     )->where('agent_levels.referral', 'like', '%' . $agentParent->referral_code . '%')->first(); 
+                        }
+                        if($agentPDG->designation === 'AGM')
+                        {
+                            $downLevel=DB::table('agent_levels')
+                            ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
+                            ->select(
+                                DB::raw('COUNT(CASE WHEN agent_registers.designation = "AGM" THEN 1 END) as AGM_count'),
+                                DB::raw('COUNT(CASE WHEN agent_registers.designation = "SM" THEN 1 END) as sm_count')
+                            )->where('agent_levels.referral', 'like', '%' . $agentParent->referral_code . '%')->first(); 
                                         
-                        //   if($downLevel->AGM_count >= 1 && $downLevel->sm_count >=2 )
-                        //   {
-                        //     if($agentPDG->direct >= 17  && $agentPDG->group >= 282 )
-                        //     {
-                        //       $incentive= 174 * 1500;
-                        //       $tds=$incentive * 0.05;
-                        //       $final=$incentive - $tds;
-                        //       $agentParent->update([
-                        //           'designation'=>'GM'
-                        //       ]);
-                        //       $agentPDG->update([
-                        //           'designation'=>"GM",
-                        //           'incentive' =>  $incentive,
-                        //           'tds_deduction' => $tds,
-                        //           'final_incentive' => $final
-                        //       ]);
-                        //     } 
-                        //   }
+                           if($downLevel->AGM_count >= 1 && $downLevel->sm_count >=2 )
+                           {
+                                if($agentPDG->direct >= 17  && $agentPDG->group >= 282 )
+                                {
+                                    $downAgent=AgentLevels::where('parent_id',$agentParent->id)->get();
+
+                                    foreach ($downAgent as $dagent) 
+                                    {
+                                        // Access each agent's properties
+                                        $agentID=$dagent->agent_id;
+                                        $DGsale=AgentDGSale::where('agent_id',$agentID)->first();
+                                        $Total=$DGsale->direct + $DGsale->group;
+                                        if($Total >= 141)
+                                        {
+                                            $incentive= 174 * 1500;
+                                            $tds=$incentive * 0.05;
+                                            $final=$incentive - $tds;
+                                            $agentParent->update([
+                                                'designation'=>'GM'
+                                            ]);
+                                            $agentPDG->update([
+                                                'designation'=>"GM",
+                                                'incentive' =>  $incentive,
+                                                'tds_deduction' => $tds,
+                                                'final_incentive' => $final
+                                            ]);
+                                        }
+                                    } 
+                                }
+                            }
+                        } 
+                        if($agentPDG->designation === 'GM')
+                        {
+                            $downLevel=DB::table('agent_levels')
+                            ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
+                            ->select(
+                                DB::raw('COUNT(CASE WHEN agent_registers.designation = "AGM" THEN 1 END) as AGM_count'),
+                                DB::raw('COUNT(CASE WHEN agent_registers.designation = "SM" THEN 1 END) as sm_count')
+                            )->where('agent_levels.referral', 'like', '%' . $agentParent->referral_code . '%')->first(); 
     
-    
-                        // }
-                        // if($agentPDG->designation === 'GM')
-                        // {
-                        //     $downLevel=DB::table('agent_levels')
-                        //     ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
-                        //     ->select(
-                        //         DB::raw('COUNT(CASE WHEN agent_registers.designation = "AGM" THEN 1 END) as AGM_count'),
-                        //         DB::raw('COUNT(CASE WHEN agent_registers.designation = "SM" THEN 1 END) as sm_count')
-                        //     )->where('agent_levels.referral', 'like', '%' . $agentParent->referral_code . '%')->first(); 
-    
-                        //   if($downLevel->AGM_count >= 2 && $downLevel->sm_count >=4 )
-                        //   {
-                        //     if($agentPDG->direct >= 24  && $agentPDG->group >= 600 )
-                        //     {
-                        //         $incentive= 325 * 1000;
-                        //         $tds=$incentive * 0.05;
-                        //         $final=$incentive - $tds;
-                        //         $agentParent->update([
-                        //             'designation'=>'SGM'
-                        //         ]);
-                        //         $agentPDG->update([
-                        //             'designation'=>"SGM",
-                        //             'incentive' =>  $incentive,
-                        //             'tds_deduction' => $tds,
-                        //             'final_incentive' => $final
-                        //         ]);
-                        //     }
-                        //   }
-                        // }
+                            if($downLevel->AGM_count >= 2 && $downLevel->sm_count >=4 )
+                            {
+                                if($agentPDG->direct >= 24  && $agentPDG->group >= 600 )
+                                {
+                                    $downAgent=AgentLevels::where('parent_id',$agentParent->id)->get();
+
+                                    foreach ($downAgent as $dagent) 
+                                    {
+                                        // Access each agent's properties
+                                        $agentID=$dagent->agent_id;
+                                        $DGsale=AgentDGSale::where('agent_id',$agentID)->first();
+                                        $Total=$DGsale->direct + $DGsale->group;
+                                        if($Total >= 300)
+                                            { 
+                                                $incentive= 325 * 1000;
+                                                $tds=$incentive * 0.05;
+                                                $final=$incentive - $tds;
+                                                $agentParent->update([
+                                                    'designation'=>'SGM'
+                                                ]);
+                                                $agentPDG->update([
+                                                    'designation'=>"SGM",
+                                                    'incentive' =>  $incentive,
+                                                    'tds_deduction' => $tds,
+                                                    'final_incentive' => $final
+                                                ]);
+                                            }
+                                    }
+                                }
+                            }
+                        }
                             
                         $agentLevel = $parentLevel;
                     }
@@ -575,22 +684,16 @@ class PlotController extends Controller
                     $CheckIncome=AgentIncome::where('plot_sale_id',$data['plot_sale_id'])->first();
                     if(!$CheckIncome)
                     {
-                        // $seller_id=$plot_sale->agent_id;
                     
                         $total_amount = $plot_sale->totalAmount; 
-    
-                        // $agentlevel=AgentLevels::where('agent_id',$seller_id)->first();
-
-                        $currentLevel=$Level->level;
-                        // return response()->json($currentLevel);
-                        
+                            
                         $incomePercentages = [
                             "1" => 8,"2" => 3,"3" => 2,"4" => 1,"5" => 1,"6" => 0.70,"7" => 0.60,"8" => 0.40,"9" => 0.20,"10" => 0.10
                         ];
-                        
+                        $index=1;
                         // $levelTables=AgentLevels::get()
                         while ($Level) {
-                            $total_income = ($incomePercentages[$currentLevel] / 100) * $total_amount;
+                            $total_income = ($incomePercentages["{$index}"] / 100) * $total_amount;
                             $pancard= AgentRegister::find($Level->agent_id);
                             AgentIncome::create([
                                 'plot_sale_id' => $plot_sale->id, 
@@ -600,16 +703,40 @@ class PlotController extends Controller
                                 'final_income' => $total_income - ($total_income * 0.05),
                                 'pancard_status' => $pancard->pancard_no ? 1 : 0 ,  // Assuming you have this value
                             ]);
-    
+
                             $parentID = $Level->parent_id;
                     
                             $agentExist = AgentLevels::where('agent_id', $parentID)->first();
                     
                             if ($agentExist) {
                                 $Level = $agentExist;
-                                $currentLevel=$Level->level;
-                            } else {
+                                $index++;
+                                if($index === 11)
+                                {
+                                    break;
+                                }
+                            } else {                                
+                                // Slice the array from the start up to the given level
+                                $selectedPercentages = array_slice($incomePercentages, 0, $index, true);
+                                
+                                // Calculate the sum of the selected values
+                                $totalIncome = array_sum($selectedPercentages);
+                                
+                                $mvgCommision= 17 - $totalIncome;
+                                
+                                $total_income = ($mvgCommision / 100) * $total_amount;
+                                
+                                AgentIncome::create([
+                                    'plot_sale_id'  => $plot_sale->id, 
+                                    'final_agent'   => $parentID,
+                                    'total_income'  => $total_income,
+                                    'tds_deduction' => $total_income * 0.05,  // Assuming a TDS of 5%
+                                    'final_income'  => $total_income - ($total_income * 0.05),
+                                    'pancard_status' => 0,  // Assuming you have this value
+                                ]);
+
                                 break;
+
                             }
                         }
                     }                    
@@ -671,18 +798,32 @@ class PlotController extends Controller
                     'plot_sales.plot_status',
                     'plot_sales.plot_value'
                 )
-    ->get();
-     if(!$sales){
-        return response()->json([
-            'success' => 0,
-            'error' => 'No Data Found'
-        ], 404);
-    }
+        ->get();
+        if(!$sales){
+            return response()->json([
+                'success' => 0,
+                'error' => 'No Data Found'
+            ], 404);
+        }
         return response()->json(['success'=>1 ,'sales'=>$sales]);
     }
+
+    public function AgentDGsale()
+    {
+        $user= Auth::guard('sanctum')->user();
+
+        $dgsale=AgentDGSale::where('agent_id',$user->id)->first();
+
+        if(!$dgsale)
+        {
+            return response()->json(['success'=>0,'error'=>'No Direct or Group Sale Exist'],404);            
+        }
+        return response()->json(['success'=>1,'DGSale'=>$dgsale],200);
+
+    }
+
+
 }
-
-
 
 // DG Sale
 
