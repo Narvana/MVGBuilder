@@ -813,16 +813,61 @@ class PlotController extends Controller
         $user= Auth::guard('sanctum')->user();
 
         $dgsale=AgentDGSale::where('agent_id',$user->id)->first();
+        if($dgsale->designation === "ASSOCIATE")
+        {
+            $directUp = 2;
+            $groupUp = 8;         
+            $promotion = "MANAGER";
+        }
+        else if($dgsale->designation === "MANAGER")
+        {
+            $directUp = 6;
+            $groupUp = 36;         
+            $promotion = "Senior Manager";
+        }
+        else if($dgsale->designation === "SM")
+        {
+            $directUp = 11;
+            $groupUp = 114;         
+            $promotion = "Assistant General Manager";
+        }
+        else if($dgsale->designation === "AGM")
+        {
+            $directUp = 17;
+            $groupUp = 282;         
+            $promotion = "General Manager";
+        }
+        else if($dgsale->designation === "GM")
+        {
+            $directUp = 24;
+            $groupUp = 600;         
+            $promotion = "Senior General Manager";
+        }
 
         if(!$dgsale)
         {
             return response()->json(['success'=>0,'error'=>'No Direct or Group Sale Exist'],404);            
         }
-        return response()->json(['success'=>1,'DGSale'=>$dgsale],200);
-
+        return response()->json(
+            [
+                'success'=>1,
+                'DGSale'=>
+                [
+                    "id" => $dgsale->id,
+                    "agent_id" => $dgsale->agent_id,
+                    "direct" => $dgsale->direct,
+                    "group" => $dgsale->group,
+                    "designation" => $dgsale->designation,
+                    "incentive" => $dgsale->incentive,
+                    "tds_deduction" => $dgsale->tds_deduction,
+                    "final_incentive" => $dgsale->final_incentive,
+                    "salary" => $dgsale->salary === 0 ? null : $dgsale->salary,
+                    "directUp"=> $directUp ,          
+                    "groupUp" => $groupUp ,          
+                    "promotion" =>  $promotion,
+                ]
+            ],200);
     }
-
-
 }
 
 // DG Sale
