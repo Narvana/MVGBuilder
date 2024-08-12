@@ -9,6 +9,7 @@ use App\Http\Controllers\SiteController;
 use App\Models\AgentIncome;
 use App\Models\PlotTransaction;
 use Illuminate\Http\Request;
+use Illuminate\Routing\RouteRegistrar;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -99,7 +100,13 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
     Route::delete('remove/Agent',[AgentRegisterController::class,'removeAgent']);
 
     Route::get('/show/Agents/admin',[AgentRegisterController::class,'showAllAgents']);
+
+    Route::get('/Agent/Income/Admin',[AgentIncomeController::class,'agentIncomeAdmin']);
+    
+    Route::put('/Update/Transaction/Admin',[AgentIncomeController::class,'UpdateAgentTransaction']);
 });
+
+
 
 // Route::get('/show/Site',[SiteController::class,'showSite']);
 
