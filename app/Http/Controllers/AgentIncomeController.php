@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\AgentIncome;
 use App\Models\Plot_Sale;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -46,6 +47,94 @@ class AgentIncomeController extends Controller
 
                 return response()->json(['success'=>1,'Incomes'=>$income],200);
     }
+
+    public function agentIncomeAdmin(Request $request)
+    {
+        $params=$request->query('id');
+
+        $income = DB::table('agent_incomes')
+        ->leftJoin('plot_sales', 'agent_incomes.plot_sale_id', '=', 'plot_sales.id')
+        ->leftJoin('plots', 'plot_sales.plot_id', '=', 'plots.id')
+        ->leftJoin('agent_registers','agent_incomes.final_agent','=','agent_registers.id')
+        ->select(
+                 'agent_incomes.id',
+                 'agent_incomes.final_agent',
+                 'agent_registers.fullname',
+                 'plot_sales.plot_id',
+                 'plots.plot_No',
+                 'plots.plot_type',
+                 'plot_sales.totalAmount',
+                 'agent_incomes.total_income',
+                 'agent_incomes.tds_deduction',
+                 'agent_incomes.final_income',
+                 'agent_incomes.transaction_status',
+                 DB::raw('CASE 
+                 WHEN agent_incomes.final_agent = plot_sales.agent_id THEN "direct"
+                    ELSE "group"
+                 END AS income_type')
+        );
+               
+        if($params){
+            $agentIncome=$income->where('agent_incomes.final_agent',$params)->get();
+            
+            if($agentIncome->isEmpty())
+            {
+                return response()->json(['success' => 0,'error' =>"Data don't Exist or Data Not Found"],404);
+            }
+            return response()->json(['success'=>1,'Incomes'=>$agentIncome],200);
+        }else{
+            $agentIncome=$income->get();
+            
+        if($agentIncome->isEmpty())
+        {
+            return response()->json(['success' => 0,'error' =>"Data don't Exist or Data Not Found"],404);
+        }
+ 
+            return response()->json(['success'=>1,'Incomes'=>$agentIncome],200);
+        }
+    }
+
+    public function UpdateAgentTransaction(Request $request)
+    {
+        $params=$request->query('id');
+        $agentTransaction=AgentIncome::where('id',$params)->first();
+
+        $validator=Validator::make($request->all(),[
+            'transaction_status' => 'required|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            $errors = $validator->errors()->all(); // Get all error messages
+            $formattedErrors = [];
+    
+            foreach ($errors as $error) {
+                $formattedErrors[] = $error;
+            }
+    
+            return response()->json([
+                'success' => 0,
+                'error' => $formattedErrors[0]
+            ], 422);
+        } 
+        
+        $data=$validator->validated();
+
+        if($agentTransaction)
+        {
+            $agentTransaction->update($data);
+
+            return response()->json([
+                'success'=>1,
+                'message' => 'Transacation updated',
+                'agent_transaction' => $agentTransaction 
+            ], 201);    
+        }
+        return response()->json([
+            'success'=>0,
+            'message' => 'No Agent Transaction Found',
+        ], 404);
+    }
+
 
     public function agentSales(Request $request)
     {
