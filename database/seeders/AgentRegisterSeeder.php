@@ -17,7 +17,7 @@ class AgentRegisterSeeder extends Seeder
     {
        $agent= DB::table('agent_registers')->insertGetId([
             'fullname' => 'MVG Super Agent',
-            'email' => 'info@mvg.com',
+            'email' => 'info@MVGBuilder.com', //info@MVGBuilder.com
             'password' => Hash::make('Info2mvg'), // Hash the password
             'referral_code' => "0",
             'pancard_no'  => '0000000000',
