@@ -16,8 +16,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 
-use function Laravel\Prompts\select;
-
 class AgentRegisterController extends Controller
 {
     //
