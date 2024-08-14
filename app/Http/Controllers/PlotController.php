@@ -16,6 +16,7 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+
 class PlotController extends Controller
 {
     //
@@ -198,6 +199,8 @@ class PlotController extends Controller
 
             $plot_sale = Plot_Sale::findOrFail($data['plot_sale_id']);
 
+            $VALUE=$plot_sale->plot_value ? $plot_sale->plot_value : null;
+
             $plot = Plot::where('id',$plot_sale->plot_id)->first();
 
             if ($plot_sale->plot_status === 'COMPLETED') 
@@ -273,7 +276,9 @@ class PlotController extends Controller
                 ]);
                 // $plot_sale->plot->update(['plot_status' => $status]);
                 
-                if($status === 'BOOKED')
+                $CheckIncome=AgentIncome::where('plot_sale_id',$data['plot_sale_id'])->get();
+
+                if($status === 'BOOKED' && $plot_sale->TDG_status === 0)
                 {
                     $agentDG = AgentDGSale::firstOrCreate(
                         ['agent_id' => $plot_sale->agent_id],
@@ -328,17 +333,35 @@ class PlotController extends Controller
                                $agentID=$dagent->agent_id;
                                $DGsale=AgentDGSale::where('agent_id',$agentID)->first();
                                $Total=$DGsale->direct + $DGsale->group;
+
                                if($Total >= 18 )
                                {
-                                    $incentive= 32 * 3000;
-                                    $tds=$incentive * 0.05;
-                                    $final=$incentive - $tds;
+                                $DAgent=AgentLevels::where('parent_id',$agent->id)->get();
+                                $incentive=0;
+                                foreach($DAgent as $DA)
+                                {
+                                  $DAid=$DA->agent_id;
+                                  $DGS=AgentDGSale::where('agent_id',$DAid)->first();
+                                  $DGtotal=$DGS->direct + $DGS->group;
+                                  if($DGS->designation === 'MANAGER')
+                                  {
+                                      $incentive=$incentive + ($DGtotal * 3000);
+                                  }
+                                  else if($DGS->designation === 'ASSOCIATE')
+                                  {
+                                      $incentive=$incentive + ($DGtotal * 8000);
+                                  }
+                                }
+                                 
+                                    $totalincentive= $incentive;
+                                    $tds=$totalincentive * 0.05;
+                                    $final=$totalincentive - $tds;
                                     $agent->update([
                                         'designation'=>'SM'
                                     ]);
                                     $agentDG->update([
                                         'designation'=>"SM",
-                                        'incentive' =>  $incentive,
+                                        'incentive' =>  $totalincentive,
                                         'tds_deduction' => $tds,
                                         'final_incentive' => $final
                                     ]);
@@ -358,7 +381,7 @@ class PlotController extends Controller
                         
                        if($downLevel >= 2)
                        {
-                            if($agentDG->direct >= 11  && $agentDG->group >= 114 )
+                            if($agentDG->direct >= 11  && $agentDG->group >= 114)
                             { 
                                 $downAgent=AgentLevels::where('parent_id',$agent->id)->get();
                                 
@@ -370,16 +393,38 @@ class PlotController extends Controller
                                     $Total=$DGsale->direct + $DGsale->group;
                                     
                                     if($Total >= 57)
-                                    {
-                                        $incentive= 83 * 2000;
-                                        $tds=$incentive * 0.05;
-                                        $final=$incentive - $tds;
+                                    {                                
+                                        $DAgent=AgentLevels::where('parent_id',$agent->id)->get();
+                                        $incentive=0;
+                                        foreach($DAgent as $DA)
+                                        {
+                                          $DAid=$DA->agent_id;
+                                          $DGS=AgentDGSale::where('agent_id',$DAid)->first();
+                                          $DGtotal=$DGS->direct + $DGS->group;
+                                          if($DGS->destination === 'SM')
+                                          {
+                                            $incentive=$incentive + ($DGtotal * 2000);
+                                          }
+                                          else if($DGS->designation === 'MANAGER')
+                                          {
+                                              $incentive=$incentive + ($DGtotal * (3000+2000));
+                                          }
+                                          else if($DGS->designation === 'ASSOCIATE')
+                                          {
+                                              $incentive=$incentive + ($DGtotal * (5000+3000+2000));
+                                          }
+                                        }
+        
+
+                                        $totalincentive= $incentive;
+                                        $tds=$totalincentive * 0.05;
+                                        $final=$totalincentive - $tds;
                                         $agent->update([
                                             'designation'=>'AGM'
                                         ]);
                                         $agentDG->update([
                                             'designation'=>"AGM",
-                                            'incentive' =>  $incentive,
+                                            'incentive' =>  $totalincentive,
                                             'tds_deduction' => $tds,
                                             'final_incentive' => $final
                                         ]);
@@ -413,18 +458,43 @@ class PlotController extends Controller
                                $Total=$DGsale->direct + $DGsale->group;
                                if($Total >= 141)
                                {
-                                    $incentive= 174 * 1500;
-                                    $tds=$incentive * 0.05;
-                                    $final=$incentive - $tds;
+                                    $DAgent=AgentLevels::where('parent_id',$agent->id)->get();
+                                    $incentive=0;
+                                    foreach($DAgent as $DA)
+                                    {
+                                        $DAid=$DA->agent_id;
+                                        $DGS=AgentDGSale::where('agent_id',$DAid)->first();
+                                        $DGtotal=$DGS->direct + $DGS->group;
+                                        if($DGS->designation === 'AGM'){
+                                            $incentive=$incentive + ($DGtotal * 1500);
+                                        }
+                                        else if($DGS->designation === 'SM')
+                                        {
+                                            $incentive = $incentive + ($DGtotal * (1500 + 2000));
+                                        }
+                                        else if($DGS->designation === 'MANAGER')
+                                        {
+                                            $incentive=$incentive + ($DGtotal * (1500 + 2000 + 3000));
+                                        }
+                                        else if($DGS->designation === 'ASSOCIATE')
+                                        {
+                                            $incentive=$incentive + ($DGtotal * (1500 + 2000 + 3000 + 5000));
+                                        }
+                                    }
+
+                                
+                                    $totalincentive= $incentive;
+                                    $tds=$totalincentive * 0.05;
+                                    $final=$totalincentive - $tds;
                                     $agent->update([
                                         'designation'=>'GM'
                                     ]);
                                     $agentDG->update([
                                         'designation'=>"GM",
-                                        'incentive' =>  $incentive,
+                                        'incentive' =>  $totalincentive,
                                         'tds_deduction' => $tds,
                                         'final_incentive' => $final,
-                                    //   'salary' => 40000,
+                                        'salary' => 40000,
                                     ]);
                                     break;
                                 }
@@ -457,18 +527,46 @@ class PlotController extends Controller
                                $Total=$DGsale->direct + $DGsale->group;
                                if($Total >= 300)
                                {
-                                    $incentive= 325 * 1000;
-                                    $tds=$incentive * 0.05;
-                                    $final=$incentive - $tds;
+                                    $DAgent=AgentLevels::where('parent_id',$agent->id)->get();
+                                    $incentive=0;
+                                    foreach($DAgent as $DA)
+                                    {
+                                        $DAid=$DA->agent_id;
+                                        $DGS=AgentDGSale::where('agent_id',$DAid)->first();
+                                        $DGtotal=$DGS->direct + $DGS->group;
+                                        if($DGS->designation === 'GM')
+                                        {
+                                            $incentive = $incentive + ($DGtotal * 1000);
+                                        }
+                                        if($DGS->designation === 'AGM'){
+                                            $incentive=$incentive + ($DGtotal * (1000 + 1500));
+                                        }
+                                        else if($DGS->designation === 'SM')
+                                        {
+                                            $incentive = $incentive + ($DGtotal * (1000 + 1500 + 2000));
+                                        }
+                                        else if($DGS->designation === 'MANAGER')
+                                        {
+                                            $incentive=$incentive + ($DGtotal * (1000 + 1500 + 2000 + 3000));
+                                        }
+                                        else if($DGS->designation === 'ASSOCIATE')
+                                        {
+                                            $incentive=$incentive + ($DGtotal * (1000 + 1500 + 2000 + 3000 + 5000));
+                                        }
+                                    }
+
+                                    $totalincentive= $incentive;
+                                    $tds=$totalincentive * 0.05;
+                                    $final=$totalincentive - $tds;
                                     $agent->update([
                                         'designation'=>'SGM'
                                     ]);
                                     $agentDG->update([
                                         'designation'=>"SGM",
-                                        'incentive' =>  $incentive,
+                                        'incentive' =>  $totalincentive,
                                         'tds_deduction' => $tds,
                                         'final_incentive' => $final,
-                                        // 'salary' => 70000,
+                                        'salary' => 70000,
                                     ]);
                                     break;
                                 }
@@ -502,19 +600,19 @@ class PlotController extends Controller
                                 {
                                     // Access each agent's properties
                                    $agentID=$dagent->agent_id;
-                                   $DGsale=AgentDGSale::where('agent_id',$agentID)->first();
+                                   $DGsale=AgentDGSale::where('agent_id',$agentParent->id)->first();
                                    $Total=$DGsale->direct + $DGsale->group;
                                    if($Total >= 4)
                                    {
-                                        $incentive= 10 * 5000;
-                                        $tds=$incentive * 0.05;
-                                        $final=$incentive - $tds;
+                                        $totalincentive= $incentive;
+                                        $tds=$totalincentive * 0.05;
+                                        $final=$totalincentive - $tds;
                                         $agentParent->update([
                                             'designation'=>'MANAGER'
                                         ]);
                                         $agentPDG->update([
                                             'designation'=>"MANAGER",
-                                            'incentive' =>  $incentive,
+                                            'incentive' =>  $totalincentive,
                                             'tds_deduction' => $tds,
                                             'final_incentive' => $final
                                         ]);
@@ -537,18 +635,36 @@ class PlotController extends Controller
                                    $Total=$DGsale->direct + $DGsale->group;
                                    if($Total >= 18)
                                    {
-                                    $incentive= 32 * 3000;
-                                    $tds=$incentive * 0.05;
-                                    $final=$incentive - $tds;
-                                    $agentParent->update([
-                                        'designation'=>'SM'
-                                    ]);
-                                    $agentPDG->update([
-                                        'designation'=>"SM",
-                                        'incentive' =>  $incentive,
-                                        'tds_deduction' => $tds,
-                                        'final_incentive' => $final
-                                    ]);
+                                        $DAgent=AgentLevels::where('parent_id',$agent->id)->get();
+                                        $incentive=0;
+                                        foreach($DAgent as $DA)
+                                        {
+                                            $DAid=$DA->agent_id;
+                                            $DGS=AgentDGSale::where('agent_id',$DAid)->first();
+                                            $DGtotal=$DGS->direct + $DGS->group;
+                                            if($DGS->designation === 'MANAGER')
+                                            {
+                                                $incentive=$incentive + ($DGtotal * 3000);
+                                            }
+                                            else if($DGS->designation === 'ASSOCIATE')
+                                            {
+                                                $incentive=$incentive + ($DGtotal * (3000 + 5000));
+                                            }
+                                        }
+
+                                        $totalincentive=$incentive;
+                                        $tds=$totalincentive * 0.05;
+                                        $final=$totalincentive - $tds;
+                                        $agentParent->update([
+                                            'designation'=>'SM'
+                                        ]);
+                                        $agentPDG->update([
+                                            'designation'=>"SM",
+                                            'incentive' =>  $totalincentive,
+                                            'tds_deduction' => $tds,
+                                            'final_incentive' => $final
+                                        ]);
+                                      break;
                                    } 
                                 }
                             }
@@ -576,18 +692,41 @@ class PlotController extends Controller
                                        $Total=$DGsale->direct + $DGsale->group;
                                        if($Total >= 57)
                                        {
-                                        $incentive= 83 * 2000;
-                                        $tds=$incentive * 0.05;
-                                        $final=$incentive - $tds;
-                                        $agentParent->update([
-                                            'designation'=>'AGM'
-                                        ]);
-                                        $agentPDG->update([
-                                            'designation'=>"AGM",
-                                            'incentive' =>  $incentive,
-                                            'tds_deduction' => $tds,
-                                            'final_incentive' => $final
-                                        ]);
+                                            $DAgent=AgentLevels::where('parent_id',$agent->id)->get();
+                                            $incentive=0;
+                                            foreach($DAgent as $DA)
+                                            {
+                                            $DAid=$DA->agent_id;
+                                            $DGS=AgentDGSale::where('agent_id',$DAid)->first();
+                                            $DGtotal=$DGS->direct + $DGS->group;
+                                            if($DGS->destination === 'SM')
+                                            {
+                                                $incentive=$incentive + ($DGtotal * 2000);
+                                            }
+                                            else if($DGS->designation === 'MANAGER')
+                                            {
+                                                $incentive=$incentive + ($DGtotal * (3000+2000));
+                                            }
+                                            else if($DGS->designation === 'ASSOCIATE')
+                                            {
+                                                $incentive=$incentive + ($DGtotal * (5000+3000+2000));
+                                            }
+                                            }
+            
+
+                                            $totalincentive= $incentive;
+                                            $tds=$totalincentive * 0.05;
+                                            $final=$totalincentive - $tds;
+                                            $agent->update([
+                                                'designation'=>'AGM'
+                                            ]);
+                                            $agentDG->update([
+                                                'designation'=>"AGM",
+                                                'incentive' =>  $totalincentive,
+                                                'tds_deduction' => $tds,
+                                                'final_incentive' => $final
+                                            ]);
+                                            break;
                                        }
                                     }
                                 }
@@ -617,19 +756,45 @@ class PlotController extends Controller
                                         $Total=$DGsale->direct + $DGsale->group;
                                         if($Total >= 141)
                                         {
-                                            $incentive= 174 * 1500;
-                                            $tds=$incentive * 0.05;
-                                            $final=$incentive - $tds;
-                                            $agentParent->update([
+                                            $DAgent=AgentLevels::where('parent_id',$agent->id)->get();
+                                            $incentive=0;
+                                            foreach($DAgent as $DA)
+                                            {
+                                                $DAid=$DA->agent_id;
+                                                $DGS=AgentDGSale::where('agent_id',$DAid)->first();
+                                                $DGtotal=$DGS->direct + $DGS->group;
+                                                if($DGS->designation === 'AGM'){
+                                                    $incentive=$incentive + ($DGtotal * 1500);
+                                                }
+                                                else if($DGS->designation === 'SM')
+                                                {
+                                                    $incentive = $incentive + ($DGtotal * (1500 + 2000));
+                                                }
+                                                else if($DGS->designation === 'MANAGER')
+                                                {
+                                                    $incentive=$incentive + ($DGtotal * (1500 + 2000 + 3000));
+                                                }
+                                                else if($DGS->designation === 'ASSOCIATE')
+                                                {
+                                                    $incentive=$incentive + ($DGtotal * (1500 + 2000 + 3000 + 5000));
+                                                }
+                                            }
+                                        
+                                            $totalincentive= $incentive;
+                                            $tds=$totalincentive * 0.05;
+                                            $final=$totalincentive - $tds;
+                                            $agent->update([
                                                 'designation'=>'GM'
                                             ]);
-                                            $agentPDG->update([
+                                            $agentDG->update([
                                                 'designation'=>"GM",
-                                                'incentive' =>  $incentive,
+                                                'incentive' =>  $totalincentive,
                                                 'tds_deduction' => $tds,
-                                                'final_incentive' => $final
+                                                'final_incentive' => $final,
+                                                'salary' => 40000,
                                             ]);
-                                        }
+                                            break;
+                                                }
                                     } 
                                 }
                             }
@@ -657,18 +822,49 @@ class PlotController extends Controller
                                         $Total=$DGsale->direct + $DGsale->group;
                                         if($Total >= 300)
                                             { 
-                                                $incentive= 325 * 1000;
-                                                $tds=$incentive * 0.05;
-                                                $final=$incentive - $tds;
-                                                $agentParent->update([
+                                                $DAgent=AgentLevels::where('parent_id',$agent->id)->get();
+                                                $incentive=0;
+                                                foreach($DAgent as $DA)
+                                                {
+                                                    $DAid=$DA->agent_id;
+                                                    $DGS=AgentDGSale::where('agent_id',$DAid)->first();
+                                                    $DGtotal=$DGS->direct + $DGS->group;
+
+                                                    if($DGS->designation === 'GM')
+                                                    {
+                                                        $incentive = $incentive + ($DGtotal * 1000);
+                                                    }
+                                                    if($DGS->designation === 'AGM'){
+                                                        $incentive=$incentive + ($DGtotal * (1000 + 1500));
+                                                    }
+                                                    else if($DGS->designation === 'SM')
+                                                    {
+                                                        $incentive = $incentive + ($DGtotal * (1000 + 1500 + 2000));
+                                                    }
+                                                    else if($DGS->designation === 'MANAGER')
+                                                    {
+                                                        $incentive=$incentive + ($DGtotal * (1000 + 1500 + 2000 + 3000));
+                                                    }
+                                                    else if($DGS->designation === 'ASSOCIATE')
+                                                    {
+                                                        $incentive=$incentive + ($DGtotal * (1000 + 1500 + 2000 + 3000 + 5000));
+                                                    }
+                                                }
+            
+                                                $totalincentive= $incentive;
+                                                $tds=$totalincentive * 0.05;
+                                                $final=$totalincentive - $tds;
+                                                $agent->update([
                                                     'designation'=>'SGM'
                                                 ]);
-                                                $agentPDG->update([
+                                                $agentDG->update([
                                                     'designation'=>"SGM",
-                                                    'incentive' =>  $incentive,
+                                                    'incentive' =>  $totalincentive,
                                                     'tds_deduction' => $tds,
-                                                    'final_incentive' => $final
+                                                    'final_incentive' => $final,
+                                                    'salary' => 70000,
                                                 ]);
+                                                break;
                                             }
                                     }
                                 }
@@ -677,26 +873,74 @@ class PlotController extends Controller
                             
                         $agentLevel = $parentLevel;
                     }
-
-                    // $agentDGINFO=AgentDGSale::where('agent_id',$plot_sale->agent_id)->first();
-                    // $agent=AgentRegister::where('id',$plot_sale->agent_id)->first();
-                   
-                    $CheckIncome=AgentIncome::where('plot_sale_id',$data['plot_sale_id'])->first();
-                    if(!$CheckIncome)
+                    if($CheckIncome->isEmpty())
                     {
-                    
                         $total_amount = $plot_sale->totalAmount; 
-                            
+
                         $incomePercentages = [
-                            "1" => 8,"2" => 3,"3" => 2,"4" => 1,"5" => 1,"6" => 0.70,"7" => 0.60,"8" => 0.40,"9" => 0.20,"10" => 0.10
+                            "1" => 8, "2" => 3, "3" => 2,"4" => 1,"5" => 1,"6" => 0.70,"7" => 0.60,"8" => 0.40,"9" => 0.20,"10" => 0.10
                         ];
+
                         $index=1;
+
+
+                        if($plot_sale->buying_type === 'EMI')
+                        {
+                            $base=$plot->plot_area * 11500;
+                            $diff=$total_amount - $base;
+                        }
+                        else if($plot_sale->buying_type === 'CASH')
+                        {
+                            $base=$plot->plot_area * 9500;
+                            $diff=$total_amount - $base;                            
+                        }
+                    
+                        $diffHalf=$diff/2;
                         // $levelTables=AgentLevels::get()
-                        while ($Level) {
-                            $total_income = ($incomePercentages["{$index}"] / 100) * $total_amount;
+                        
+                        if($percentagePaid >= 30 && $percentagePaid < 50)
+                        {
+                            $diffIncome=$diffHalf/2;
+                            $agentIncome=$base/2;
+                        }
+                        else if($percentagePaid >= 50)
+                        {
+                            $diffIncome=$diffHalf;
+                            $agentIncome=$base;
+                        }
+
+                        $MVG=AgentRegister::where('referral_code',"0")->first();
+
+                        AgentIncome::create([
+                            'plot_sale_id' => $plot_sale->id, 
+                            'income_type' => 'CORPUS',
+                            'final_agent' => $MVG->id,
+                            'total_income' => $diffIncome,
+                            'tds_deduction' => $diffIncome * 0.05,  // Assuming a TDS of 5%
+                            'final_income' => $diffIncome - ($diffIncome * 0.05),
+                            'pancard_status' => 0 ,  // Assuming you have this value
+
+                        ]);
+
+                        AgentIncome::create([
+                            'plot_sale_id' => $plot_sale->id, 
+                            'income_type' => 'CORPUS',
+                            'final_agent' => $plot_sale->agent_id,
+                            'total_income' => $diffIncome,
+                            'tds_deduction' => $diffIncome * 0.05,  // Assuming a TDS of 5%
+                            'final_income' => $diffIncome - ($diffIncome * 0.05),
+                            'pancard_status' => 1 ,  // Assuming you have this value
+                        ]);
+
+                        // return response()->json([$diffHalf]);
+
+                        while ($Level) 
+                        {
+                            $total_income = ($incomePercentages["{$index}"] / 100) * $agentIncome ;
                             $pancard= AgentRegister::find($Level->agent_id);
                             AgentIncome::create([
                                 'plot_sale_id' => $plot_sale->id, 
+                                'income_type' => 'DIRECT',
                                 'final_agent' => $Level->agent_id,
                                 'total_income' => $total_income,
                                 'tds_deduction' => $total_income * 0.05,  // Assuming a TDS of 5%
@@ -720,26 +964,49 @@ class PlotController extends Controller
                                 $selectedPercentages = array_slice($incomePercentages, 0, $index, true);
                                 
                                 // Calculate the sum of the selected values
-                                $totalIncome = array_sum($selectedPercentages);
+                                $remainingPercent = array_sum($selectedPercentages);
                                 
-                                $mvgCommision= 17 - $totalIncome;
+                                $mvgCommision= 17 - $remainingPercent;
                                 
-                                $total_income = ($mvgCommision / 100) * $total_amount;
+                                $mvg_income = ($mvgCommision / 100) * $agentIncome;
                                 
                                 AgentIncome::create([
                                     'plot_sale_id'  => $plot_sale->id, 
+                                    'income_type' => 'DIRECT',
                                     'final_agent'   => $parentID,
-                                    'total_income'  => $total_income,
-                                    'tds_deduction' => $total_income * 0.05,  // Assuming a TDS of 5%
-                                    'final_income'  => $total_income - ($total_income * 0.05),
+                                    'total_income'  => $mvg_income,
+                                    'tds_deduction' => $mvg_income * 0.05,  // Assuming a TDS of 5%
+                                    'final_income'  => $mvg_income - ($mvg_income * 0.05),
                                     'pancard_status' => 0,  // Assuming you have this value
                                 ]);
-
                                 break;
-
                             }
                         }
-                    }                    
+                    } 
+                       
+                    $plot_sale->update([
+                        'TDG_status' => 1,
+                    ]);
+                }
+                else if($status === 'BOOKED' && $plot_sale->TDG_status === 1)
+                {
+                    if($VALUE >= 50)
+                    {
+                        exit;
+                    }
+                    else if($VALUE < 50)
+                    {
+                        foreach($CheckIncome as $income)
+                        {
+                            $income->update([
+                            'total_income' => $income->total_income * 2,                            
+                            'tds_deduction' => $income->tds_deduction * 2,
+                            'final_income' => $income->final_income * 2,                        
+                            ]
+                        );
+                            
+                        }
+                    }
                 }
 
                 DB::commit();

@@ -20,9 +20,11 @@ class Plot_Sale extends Model
         'plot_id',
         'client_id',
         'agent_id',
+        'buying_type',
         'initial_amount',
         'totalAmount',
         'plot_status',
         'plot_value',
+        'TDG_status'
     ];
 }

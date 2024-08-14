@@ -10,6 +10,7 @@ use App\Models\Plot_Sale;
 use App\Models\Plot;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class ClientControllerController extends Controller
@@ -17,6 +18,7 @@ class ClientControllerController extends Controller
     //
     public function addClient(Request $request){
         try {
+            DB::beginTransaction();
             //code...
             $validator = Validator::make($request->all(), [
                 'client_name' => 'required|string',
@@ -25,6 +27,7 @@ class ClientControllerController extends Controller
                 'client_city' => 'nullable|string',
                 'client_state' => 'required|string',
                 'plot_id' => 'required|integer|unique:plot_sales',
+                'buying_type' => 'required|string',
                 'rangeAmount' => 'required|integer',
                 'initial_amount'=> 'required|integer'
             ]);
@@ -102,6 +105,7 @@ class ClientControllerController extends Controller
                 'plot_id' => $data['plot_id'],
                 'client_id' => $clientId,
                 'agent_id' => $agent->id,
+                'buying_type' => $data['buying_type'],
                 'initial_amount'=>$data['initial_amount'],
                 'totalAmount' => $totalAmount,
                 'plot_value' => 0.00
@@ -125,6 +129,9 @@ class ClientControllerController extends Controller
                 ], 500);
             }
             
+            
+            DB::commit();
+
             return response()->json([
                 'success' => 1,
                 'message' => "Client Registered successfully",
@@ -134,6 +141,7 @@ class ClientControllerController extends Controller
             ], 201);
         } 
         catch (\Throwable $th) {
+            DB::rollBack();
             return response()->json([
             'success'=>0, 'error' => 'Internal Server Error' . $th->getMessage()], 500);
         }
@@ -230,4 +238,40 @@ class ClientControllerController extends Controller
                 'details' =>'Internal Server Error. ' . $th->getMessage()], 500);
         }
     }
+
+    public function clientContactInfo(Request $request)
+    {
+        try {
+            //code...
+            $params=$request->query('client_contact');
+            
+            if(!$params)
+            {
+                return response()->json(['success'=>0,'error'=>"provide contact to search clinet"],404);
+            }
+
+            $client=ClientController::where('client_contact',$params)->first();
+
+            if(!$client)
+            {
+                return response()->json(['success'=>0,'error'=>"provide contact to search client"],404);
+            }
+            unset($client['created_at']);
+            unset($client['updated_at']);
+             return response()->json(
+                [
+                    'success'=>1,
+                    'data'=>
+                    [
+                        $client
+                    ]
+                ],200);
+        } catch (\Throwable $th) {
+            //throw $th;
+            return response()->json([
+                'success'=>0,
+                'details' =>'Internal Server Error. ' . $th->getMessage()], 500);
+        }
+    }
+
 }

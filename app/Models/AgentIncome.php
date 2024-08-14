@@ -11,6 +11,7 @@ class AgentIncome extends Model
     
     protected $fillable =[
         'plot_sale_id',
+        'income_type',
         'total_income',
         'tds_deduction',
         'final_income',

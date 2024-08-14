@@ -155,18 +155,18 @@ class AgentIncomeController extends Controller
             12 => 'DEC',
         ];
 
-        $sales = DB::table('plot_sales')
-        ->leftJoin('agent_registers', 'plot_sales.agent_id', '=', 'agent_registers.id')
+        $sales = DB::table('agent_incomes')
+        ->leftJoin('agent_registers', 'agent_incomes.final_agent', '=', 'agent_registers.id')
         ->select(
-            DB::raw('YEAR(plot_sales.created_at) as year'),
-            DB::raw('MONTH(plot_sales.created_at) as month'),
-            DB::raw('SUM(plot_sales.totalAmount) as monthSale')
+            DB::raw('YEAR(agent_incomes.created_at) as year'),
+            DB::raw('MONTH(agent_incomes.created_at) as month'),
+            DB::raw('SUM(agent_incomes.final_income) as monthSale')
         )
         ->where('agent_registers.id', $user->id)
-        ->groupBy(DB::raw('YEAR(plot_sales.created_at)'))
-        ->groupBy(DB::raw('MONTH(plot_sales.created_at)'))
-        ->orderBy(DB::raw('YEAR(plot_sales.created_at)'))
-        ->orderBy(DB::raw('MONTH(plot_sales.created_at)'))
+        ->groupBy(DB::raw('YEAR(agent_incomes.created_at)'))
+        ->groupBy(DB::raw('MONTH(agent_incomes.created_at)'))
+        ->orderBy(DB::raw('YEAR(agent_incomes.created_at)'))
+        ->orderBy(DB::raw('MONTH(agent_incomes.created_at)'))
         ->get();
 
         if($sales->isEmpty())

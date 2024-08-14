@@ -69,6 +69,7 @@ Route::middleware(['auth:sanctum','role:agent'])->group(function () {
 
     Route::get('/Agent/DG/Sales',[PlotController::class,'AgentDGsale']);
 
+    Route::get('/Client/Contact/Info',[ClientControllerController::class,'clientContactInfo']);
 });
 
 Route::middleware(['auth:sanctum','role:admin'])->group(function () {
