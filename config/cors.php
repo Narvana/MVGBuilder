@@ -18,8 +18,8 @@ return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
-    
-    'allowed_origins' => ['*'],
+
+    'allowed_origins' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', 'http://localhost')),
 
     'allowed_origins_patterns' => [],
 
