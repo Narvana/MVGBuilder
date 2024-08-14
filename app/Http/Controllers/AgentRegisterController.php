@@ -78,13 +78,11 @@ class AgentRegisterController extends Controller
 
         if(strlen($level) === 1)
         {
-
             $new = '0' . $level;
-            $code = 'MVG' . $agent->id . 'L' . $level . $new;
-
+            $code = 'MVG' . $new . 'L' . $level . $agent->id;
         }else if(strlen($level)>1)
         {
-            $code = 'MVG' . $agent->id . 'L' . $level . $level;
+            $code = 'MVG' . $level  . 'L' . $level . $agent->id;
         }
 
             // return response()->json($code);
