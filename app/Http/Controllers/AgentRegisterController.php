@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 
+use function Laravel\Prompts\select;
+
 class AgentRegisterController extends Controller
 {
     //
@@ -256,7 +258,8 @@ class AgentRegisterController extends Controller
         return response()->json([
             'success' => 1,
             'agent' => $agent,
-            'sponser_name' => $agentParent->fullname,'sponser_referralCode' => $agentParent->referral_code
+            'sponser_name' => $agentParent->fullname,
+            'sponser_referralCode' => $agentParent->referral_code
         ], 200);
     }
 
@@ -423,7 +426,6 @@ class AgentRegisterController extends Controller
     // Map
     public function showMap(Request $request)
     {
-
         $user=Auth::guard('sanctum')->user();
 
         $params=$request->query('parent_id');
@@ -442,11 +444,37 @@ class AgentRegisterController extends Controller
             ];
         }
         return response()->json(['success'=>1, 'Map'=>$agentsHierarchy],200);   
+
+        // $user=Auth::guard('sanctum')->user();
+
+        // $params=$request->query('parent_id');
+
+        // $level1Agents=DB::table('agent_levels')
+        //   ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
+        //   ->select(
+        //     "agent_levels.level",
+        //     "agent_registers.id",
+        //     "agent_registers.referral_code",
+        //     "agent_registers.pancard_no",
+        //     "agent_registers.contact_no",
+        //     "agent_registers.fullname",
+        //     "agent_registers.email",
+        //     "agent_registers.designation",
+        //     "agent_registers.address",
+        //     "agent_registers.DOB",
+        //   )->where('parent_id', $params ?? $user->id)->get();
+
+        // if($level1Agents->isEmpty())
+        // {
+        //     return response()->json(['success'=>0,'error'=>'Data Not Found'],404);
+        // }
+
+        // return response()->json(['success'=>1, 'Map'=>$level1Agents],200);   
     }
 
     public function showAllAgents(Request $request)
     {
-        // $agents = AgentRegister::where('referral_code','!=', "0")->get();
+        // Old Code
         $agents = AgentRegister::where('referral_code', '!=', "0")
         ->with('agentLevel')
         ->get();
@@ -463,10 +491,41 @@ class AgentRegisterController extends Controller
                 ];
         }
         return response()->json(['success'=>1, 'Agents'=>$allAgents]);
+
+        // Updated Code
+
+        //  $agent = DB::table('agent_registers')
+        //          ->leftJoin('agent_levels','agent_registers.id','=','agent_levels.agent_id')
+        //          ->leftJoin('agent_registers as parent','agent_levels.parent_id', '=' , 'parent.id')
+        //          ->select(
+        //             'agent_registers.id',
+        //             'agent_registers.referral_code',
+        //             'agent_registers.pancard_no',
+        //             'agent_registers.contact_no',
+        //             'agent_registers.fullname',
+        //             'agent_registers.email',
+        //             'agent_registers.designation',
+        //             'agent_registers.address',
+        //             'agent_registers.DOB',
+        //             'agent_levels.level',
+        //             'agent_levels.parent_id',
+        //             'parent.fullname as Sponser_Name',
+        //             'parent.referral_code as Sponser_Referral'
+        //             )
+        //             ->where('agent_registers.referral_code','!=', "0")
+        //             ->get();
+
+        // if($agent->isEmpty())
+        // {
+        //     return response()->json(['success' => 0,'error' => 'Data Not Found'],404);
+        // }        
+        // return response()->json(['success'=>1, 'Agents'=>$agent]);
     }
 
     public function showAgentDown(Request $request)
     {
+        // OLD CODE
+
         $user=Auth::guard('sanctum')->user();
         
         $level1Agents = AgentLevels::where('referral', 'like', '%' . $user->referral_code . '%')
@@ -487,6 +546,33 @@ class AgentRegisterController extends Controller
         }
 
         return response()->json(['success'=>1,'downAgent'=> $agentsHierarchy]);
+
+        //  UPDATED CODE
+        // $user=Auth::guard('sanctum')->user();
+        
+        // $level1Agents=DB::table('agent_levels')
+        //               ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
+        //               ->select(
+        //                 "agent_levels.level",
+        //                 "agent_registers.id",
+        //                 "agent_registers.referral_code",
+        //                 "agent_registers.pancard_no",
+        //                 "agent_registers.contact_no",
+        //                 "agent_registers.fullname",
+        //                 "agent_registers.email",
+        //                 "agent_registers.designation",
+        //                 "agent_registers.address",
+        //                 "agent_registers.DOB",
+        //               )
+        //               ->where('referral', 'like', '%' . $user->referral_code . '%')
+        //               ->get();
+          
+        // if($level1Agents->isEmpty())
+        // {
+        //     return response()->json(['success' => 0,'error' => 'Data Not Found'],404);
+        // }
+        
+        // return response()->json(['success'=>1,'downAgent'=> $level1Agents]);
     }
 
     public function agentIncome(Request $request)
@@ -498,9 +584,9 @@ class AgentRegisterController extends Controller
         ->leftJoin('plot_sales', 'agent_incomes.plot_sale_id', '=', 'plot_sales.id')
         ->leftJoin('plots', 'plot_sales.plot_id', '=', 'plots.id')
         ->select(
-                 'plot_sales.plot_id',
-                 'plots.plot_No',
-                 'plots.plot_type',
+                    'plot_sales.plot_id',
+                    'plots.plot_No',
+                    'plots.plot_type',
                     'plot_sales.totalAmount',
                     'agent_incomes.total_income',
                     'agent_incomes.tds_deduction',
