@@ -24,5 +24,7 @@ class DatabaseSeeder extends Seeder
         Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'api']);
         Permission::firstOrCreate(['name' => 'edit articles', 'guard_name' => 'api']);
 
+        $this->call(AgentRegisterSeeder::class);
+        
     }
 }
