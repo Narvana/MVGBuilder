@@ -6,6 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Models\AgentRegister;
 
 class AgentRegisterSeeder extends Seeder
 {
@@ -14,7 +15,7 @@ class AgentRegisterSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('agent_registers')->insert([
+       $agent= DB::table('agent_registers')->insert([
             'fullname' => 'MVG Super Agent',
             'email' => 'info@mvgbuilder.com',
             'password' => Hash::make('Info2mvg'), // Hash the password
@@ -25,6 +26,8 @@ class AgentRegisterSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
+        $agentModel = AgentRegister::find($agent); // Assuming your model for the 'agent_registers' table is User
+        $agentModel->assignRole('agent');
         // Add more seed data as needed...
     }
 }
