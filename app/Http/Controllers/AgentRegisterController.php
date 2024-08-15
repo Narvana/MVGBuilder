@@ -75,18 +75,20 @@ class AgentRegisterController extends Controller
 
          $level = $agent_level ? intval($agent_level->level) + 1 : 1;
 
-
-        if(strlen($level) === 1)
+        if(strlen($agent->id) === 1)
         {
-            $new = '0' . $level;
-            $code = 'MVG' . $new . 'L' . $level . $agent->id;
-        }else if(strlen($level)>1)
+            $new = '00' . $agent->id;
+            $code =  'L' . $level . 'MVG' .  $new;
+        }else if(strlen($agent->id) === 2)
         {
-            $code = 'MVG' . $level  . 'L' . $level . $agent->id;
+            $new = '0' . $agent->id;
+            $code = 'L' . $level . 'MVG' .  $new;
         }
-
-            // return response()->json($code);
-
+        else if(strlen($agent->id) > 2)
+        {
+            $code = 'L' . $level . 'MVG' .  $agent->id;
+        }
+        
         $agent->update([
             'referral_code' => $code,
         ]);   
@@ -471,51 +473,51 @@ class AgentRegisterController extends Controller
     public function showAllAgents(Request $request)
     {
         // Old Code
-        $agents = AgentRegister::where('referral_code', '!=', "0")
-        ->with('agentLevel')
-        ->get();
+        // $agents = AgentRegister::where('referral_code', '!=', "0")
+        // ->with('agentLevel')
+        // ->get();
         
-        if($agents->isEmpty()){
-            return response()->json(['success' => 0,'error'=>'No Agent Found'],404);
-        }
+        // if($agents->isEmpty()){
+        //     return response()->json(['success' => 0,'error'=>'No Agent Found'],404);
+        // }
 
-        foreach($agents as $agent){
-            // $agentLevel=AgentLevels::where('agent_id',$agent->id)->first();
-                $allAgents[] = [
-                    'agent' => $agent,
-                    'level' => $agent->agentLevel ? $agent->agentLevel->level : null,
-                ];
-        }
-        return response()->json(['success'=>1, 'Agents'=>$allAgents]);
+        // foreach($agents as $agent){
+        //     // $agentLevel=AgentLevels::where('agent_id',$agent->id)->first();
+        //         $allAgents[] = [
+        //             'agent' => $agent,
+        //             'level' => $agent->agentLevel ? $agent->agentLevel->level : null,
+        //         ];
+        // }
+        // return response()->json(['success'=>1, 'Agents'=>$allAgents]);
 
         // Updated Code
 
-        //  $agent = DB::table('agent_registers')
-        //          ->leftJoin('agent_levels','agent_registers.id','=','agent_levels.agent_id')
-        //          ->leftJoin('agent_registers as parent','agent_levels.parent_id', '=' , 'parent.id')
-        //          ->select(
-        //             'agent_registers.id',
-        //             'agent_registers.referral_code',
-        //             'agent_registers.pancard_no',
-        //             'agent_registers.contact_no',
-        //             'agent_registers.fullname',
-        //             'agent_registers.email',
-        //             'agent_registers.designation',
-        //             'agent_registers.address',
-        //             'agent_registers.DOB',
-        //             'agent_levels.level',
-        //             'agent_levels.parent_id',
-        //             'parent.fullname as Sponser_Name',
-        //             'parent.referral_code as Sponser_Referral'
-        //             )
-        //             ->where('agent_registers.referral_code','!=', "0")
-        //             ->get();
+         $agent = DB::table('agent_registers')
+                 ->leftJoin('agent_levels','agent_registers.id','=','agent_levels.agent_id')
+                 ->leftJoin('agent_registers as parent','agent_levels.parent_id', '=' , 'parent.id')
+                 ->select(
+                    'agent_registers.id',
+                    'agent_registers.referral_code',
+                    'agent_registers.pancard_no',
+                    'agent_registers.contact_no',
+                    'agent_registers.fullname',
+                    'agent_registers.email',
+                    'agent_registers.designation',
+                    'agent_registers.address',
+                    'agent_registers.DOB',
+                    'agent_levels.level',
+                    'agent_levels.parent_id',
+                    'parent.fullname as Sponser_Name',
+                    'parent.referral_code as Sponser_Referral'
+                    )
+                    ->where('agent_registers.referral_code','!=', "0")
+                    ->get();
 
-        // if($agent->isEmpty())
-        // {
-        //     return response()->json(['success' => 0,'error' => 'Data Not Found'],404);
-        // }        
-        // return response()->json(['success'=>1, 'Agents'=>$agent]);
+        if($agent->isEmpty())
+        {
+            return response()->json(['success' => 0,'error' => 'Data Not Found'],404);
+        }        
+        return response()->json(['success'=>1, 'Agents'=>$agent]);
     }
 
     public function showAgentDown(Request $request)
