@@ -24,12 +24,12 @@ class AgentIncomeController extends Controller
         $income = DB::table('agent_incomes')
         ->leftJoin('plot_sales', 'agent_incomes.plot_sale_id', '=', 'plot_sales.id')
         ->leftJoin('plots', 'plot_sales.plot_id', '=', 'plots.id')
-        // ->leftJoin()
         ->select(
                  'plot_sales.plot_id',
                  'plots.plot_No',
                  'plots.plot_type',
                  'plot_sales.totalAmount',
+                 'agent_incomes.income_type',
                  'agent_incomes.total_income',
                  'agent_incomes.tds_deduction',
                  'agent_incomes.final_income',
@@ -37,7 +37,7 @@ class AgentIncomeController extends Controller
                  DB::raw('CASE 
                  WHEN agent_incomes.final_agent = plot_sales.agent_id THEN "direct"
                     ELSE "group"
-                 END AS income_type')
+                 END AS income_DG')
                 )->where('agent_incomes.final_agent',$params->id)->get();
 
         if($income->isEmpty())
@@ -64,6 +64,7 @@ class AgentIncomeController extends Controller
                  'plots.plot_No',
                  'plots.plot_type',
                  'plot_sales.totalAmount',
+                 'agent_incomes.income_type',
                  'agent_incomes.total_income',
                  'agent_incomes.tds_deduction',
                  'agent_incomes.final_income',
@@ -71,7 +72,7 @@ class AgentIncomeController extends Controller
                  DB::raw('CASE 
                  WHEN agent_incomes.final_agent = plot_sales.agent_id THEN "direct"
                     ELSE "group"
-                 END AS income_type')
+                 END AS income_DG')
         );
                
         if($params){
