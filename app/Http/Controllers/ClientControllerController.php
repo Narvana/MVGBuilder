@@ -26,8 +26,8 @@ class ClientControllerController extends Controller
                 'client_address' => 'required|string',
                 'client_city' => 'nullable|string',
                 'client_state' => 'required|string',
+                'plot_id' => 'required|integer',
                 'buying_type' => 'required|string|in:CASH,EMI',
-                'buying_type' => 'required|string',
                 'rangeAmount' => 'required|integer',
                 'initial_amount'=> 'required|integer'
             ]);
