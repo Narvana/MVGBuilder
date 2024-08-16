@@ -84,8 +84,6 @@ class PlotController extends Controller
                 'plots.plot_No',
                 'plots.plot_type',
                 'plots.plot_area',
-                'plots.price_from',
-                'plots.price_to',
                 'plots.plot_status',
                 DB::raw('IFNULL(client_controllers.client_name, \'\') AS client_name'),
                 'sites.site_name'
@@ -127,8 +125,6 @@ class PlotController extends Controller
                 'plots.plot_No',
                 'plots.plot_type',
                 'plots.plot_area',
-                'plots.price_from',
-                'plots.price_to',
                 'plots.plot_status',
                 DB::raw('IFNULL(client_controllers.client_name, \'\') AS client_name'),
             );
@@ -1034,8 +1030,6 @@ class PlotController extends Controller
                     'plots.plot_No',
                     'plots.plot_type',
                     'plots.plot_area',
-                    'plots.price_from',
-                    'plots.price_to',
                     'agent_registers.fullname As Broker_Name',
                     'client_controllers.client_name',  // Replace 'client_name' with the actual column name you want from the clients table
                     'plot_sales.initial_amount',
@@ -1048,8 +1042,6 @@ class PlotController extends Controller
                     'plots.plot_No',
                     'plots.plot_type',
                     'plots.plot_area',
-                    'plots.price_from',
-                    'plots.price_to',
                     'agent_registers.fullname',
                     'client_controllers.client_name',
                     'plot_sales.initial_amount',
