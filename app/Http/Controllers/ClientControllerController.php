@@ -26,8 +26,8 @@ class ClientControllerController extends Controller
                 'client_address' => 'required|string',
                 'client_city' => 'nullable|string',
                 'client_state' => 'required|string',
-                'plot_id' => 'required|integer|unique:plot_sales',
-                'buying_type' => 'required|string',
+                'plot_id' => 'required|integer',
+                'buying_type' => 'required|string|in:CASH,EMI',
                 'rangeAmount' => 'required|integer',
                 'initial_amount'=> 'required|integer'
             ]);
@@ -58,15 +58,23 @@ class ClientControllerController extends Controller
                 ], 404);
             }
             
-            $client = ClientController::where('client_contact', $data['client_contact'])->first();
-            
-            if ($data['rangeAmount'] < $plot->price_from || $data['rangeAmount'] > $plot->price_to) {
+            if($data['buying_type'] === 'CASH' && $data['rangeAmount'] < 9500)
+            {
                 return response()->json([
                     'success' => 0,
-                    'error' => "Amount should be between {$plot->price_from} and {$plot->price_to}",
-                ], 422);
+                    'error' => "If Buying Type is CASH, then range amount should not be less than 9500",
+                ], 409);
+            }
+            if($data['buying_type'] === 'EMI' && $data['rangeAmount'] < 11500)
+            {
+                return response()->json([
+                    'success' => 0,
+                    'error' => "If Buying Type is EMI, then range amount should not be less than 11500",
+                ], 409);
             }
 
+            $client = ClientController::where('client_contact', $data['client_contact'])->first();
+            
             if (!$client) {
                 $newClient = ClientController::create([
                     'client_name' => $data['client_name'],
@@ -82,7 +90,6 @@ class ClientControllerController extends Controller
                         'error' => 'Client Not Added',
                     ], 500);
                 }
-            
                 $clientId = $newClient->id;
             } else {
                 $clientId = $client->id; // Use existing client
@@ -98,9 +105,8 @@ class ClientControllerController extends Controller
                     'error' => "Plot is already assigned to {$client->client_name}.",
                 ], 409);
             }
-            
+
             $totalAmount = $data['rangeAmount'] * $plot->plot_area;
-            
             $plot_sale = Plot_Sale::create([
                 'plot_id' => $data['plot_id'],
                 'client_id' => $clientId,
@@ -139,7 +145,7 @@ class ClientControllerController extends Controller
                 'plot_sale' => $plot_sale,
                 'plot' =>$plot
             ], 201);
-        } 
+        }
         catch (\Throwable $th) {
             DB::rollBack();
             return response()->json([
@@ -273,5 +279,4 @@ class ClientControllerController extends Controller
                 'details' =>'Internal Server Error. ' . $th->getMessage()], 500);
         }
     }
-
 }
