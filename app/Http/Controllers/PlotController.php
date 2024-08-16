@@ -350,7 +350,8 @@ class PlotController extends Controller
                                         'designation'=>"SM",
                                         'incentive' =>  $totalincentive,
                                         'tds_deduction' => $tds,
-                                        'final_incentive' => $final
+                                        'final_incentive' => $final,
+                                        'TransactionStatus' => 0
                                     ]);
                                     break;
                                 } 
@@ -413,7 +414,8 @@ class PlotController extends Controller
                                             'designation'=>"AGM",
                                             'incentive' =>  $totalincentive,
                                             'tds_deduction' => $tds,
-                                            'final_incentive' => $final
+                                            'final_incentive' => $final,
+                                            'TransactionStatus' => 0
                                         ]);
 
                                         break;
@@ -481,6 +483,7 @@ class PlotController extends Controller
                                         'incentive' =>  $totalincentive,
                                         'tds_deduction' => $tds,
                                         'final_incentive' => $final,
+                                        'TransactionStatus' => 0,
                                         'salary' => 40000,
                                     ]);
                                     break;
@@ -553,6 +556,7 @@ class PlotController extends Controller
                                         'incentive' =>  $totalincentive,
                                         'tds_deduction' => $tds,
                                         'final_incentive' => $final,
+                                        'TransactionStatus' => 0,
                                         'salary' => 70000,
                                     ]);
                                     break;
@@ -649,7 +653,8 @@ class PlotController extends Controller
                                             'designation'=>"SM",
                                             'incentive' =>  $totalincentive,
                                             'tds_deduction' => $tds,
-                                            'final_incentive' => $final
+                                            'final_incentive' => $final,
+                                            'TransactionStatus' => 0
                                         ]);
                                       break;
                                    } 
@@ -711,7 +716,8 @@ class PlotController extends Controller
                                                 'designation'=>"AGM",
                                                 'incentive' =>  $totalincentive,
                                                 'tds_deduction' => $tds,
-                                                'final_incentive' => $final
+                                                'final_incentive' => $final,
+                                                'TransactionStatus' => 0
                                             ]);
                                             break;
                                        }
@@ -777,6 +783,7 @@ class PlotController extends Controller
                                                 'incentive' =>  $totalincentive,
                                                 'tds_deduction' => $tds,
                                                 'final_incentive' => $final,
+                                                'TransactionStatus' => 0,
                                                 'salary' => 40000,
                                             ]);
                                             break;
@@ -848,6 +855,7 @@ class PlotController extends Controller
                                                     'incentive' =>  $totalincentive,
                                                     'tds_deduction' => $tds,
                                                     'final_incentive' => $final,
+                                                    'TransactionStatus' => 0,
                                                     'salary' => 70000,
                                                 ]);
                                                 break;
@@ -1034,6 +1042,7 @@ class PlotController extends Controller
                     DB::raw('ROUND(SUM(plot_transactions.amount), 2) AS calculated_value'),
                     'plot_sales.plot_status',
                     'plot_sales.plot_value',
+                    'plot_transaction.payment_method'
                 )->groupBy(
                     'plot_sales.id',
                     'plots.plot_No',
@@ -1044,7 +1053,8 @@ class PlotController extends Controller
                     'plot_sales.initial_amount',
                     'plot_sales.totalAmount',
                     'plot_sales.plot_status',
-                    'plot_sales.plot_value'
+                    'plot_sales.plot_value',
+                    'plot_transaction.payment_method'
                 )
         ->get();
         if(!$sales){
