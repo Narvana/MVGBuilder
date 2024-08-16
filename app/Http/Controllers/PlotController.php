@@ -289,9 +289,15 @@ class PlotController extends Controller
                                $agentID=$dagent->agent_id;
                                $DGsale=AgentDGSale::where('agent_id',$agentID)->first();
                                $Total=$DGsale->direct + $DGsale->group;
+
                                if($Total >= 4)
                                {
-                                    $incentive= 10 * 5000;
+                                    return response()->json('Hello'); 
+
+                                    $incentive = 10 * 5000;
+                                     
+                                    return response()->json($incentive);
+
                                     $tds=$incentive * 0.05;
                                     $final=$incentive - $tds;
                                     $agent->update([
@@ -324,7 +330,9 @@ class PlotController extends Controller
                                if($Total >= 18 )
                                {
                                 $DAgent=AgentLevels::where('parent_id',$agent->id)->get();
+ 
                                 $incentive=0;
+ 
                                 foreach($DAgent as $DA)
                                 {
                                   $DAid=$DA->agent_id;
@@ -491,8 +499,6 @@ class PlotController extends Controller
                             }
                         } 
                       }
-
-
                     }
                     else if($agentDG->designation === 'GM')
                     {
@@ -595,7 +601,7 @@ class PlotController extends Controller
                                    $Total=$DGsale->direct + $DGsale->group;
                                    if($Total >= 4)
                                    {
-                                        $totalincentive= $incentive;
+                                        $totalincentive= 10 * 5000;
                                         $tds=$totalincentive * 0.05;
                                         $final=$totalincentive - $tds;
                                         $agentParent->update([
