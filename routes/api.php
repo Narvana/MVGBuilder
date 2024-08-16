@@ -103,6 +103,8 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
     Route::get('/show/Agents/admin',[AgentRegisterController::class,'showAllAgents']);
 
     Route::get('/Agent/Income/Admin',[AgentIncomeController::class,'agentIncomeAdmin']);
+
+     Route::get('/Super/Agent/Income/Admin',[AgentIncomeController::class,'superAgentIncomeAdmin']);
     
     Route::put('/Update/Transaction/Admin',[AgentIncomeController::class,'UpdateAgentTransaction']);
 });
