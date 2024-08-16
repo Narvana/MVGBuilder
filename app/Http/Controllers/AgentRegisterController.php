@@ -617,8 +617,9 @@ class AgentRegisterController extends Controller
                  'client_controllers.client_address',
                  'plots.plot_No',
                  'plots.plot_type',
-                 'sites.site_name',                
+                 'sites.site_name',
                  'plot_sales.totalAmount',
+                 'plot_sales.plot_value',
                  'plot_sales.plot_status'
                 )->where('plot_sales.agent_id',$user->id);
         
