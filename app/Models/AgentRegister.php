@@ -31,4 +31,8 @@ class AgentRegister extends Model
         'designation',
         'DOB'
     ];
+
+    protected $hidden = [
+        'password'
+    ];
 }
