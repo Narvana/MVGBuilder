@@ -26,7 +26,7 @@ class ClientControllerController extends Controller
                 'client_address' => 'required|string',
                 'client_city' => 'nullable|string',
                 'client_state' => 'required|string',
-                'plot_id' => 'required|integer',
+                'buying_type' => 'required|string|in:CASH,EMI',
                 'buying_type' => 'required|string',
                 'rangeAmount' => 'required|integer',
                 'initial_amount'=> 'required|integer'
@@ -75,13 +75,6 @@ class ClientControllerController extends Controller
 
             $client = ClientController::where('client_contact', $data['client_contact'])->first();
             
-            // if ($data['rangeAmount'] < $plot->price_from || $data['rangeAmount'] > $plot->price_to) {
-            //     return response()->json([
-            //         'success' => 0,
-            //         'error' => "Amount should be between {$plot->price_from} and {$plot->price_to}",
-            //     ], 422);
-            // }
-
             if (!$client) {
                 $newClient = ClientController::create([
                     'client_name' => $data['client_name'],
