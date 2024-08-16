@@ -1042,7 +1042,7 @@ class PlotController extends Controller
                     DB::raw('ROUND(SUM(plot_transactions.amount), 2) AS calculated_value'),
                     'plot_sales.plot_status',
                     'plot_sales.plot_value',
-                    'plot_transaction.payment_method'
+                    'plot_transactions.payment_method'
                 )->groupBy(
                     'plot_sales.id',
                     'plots.plot_No',
@@ -1054,7 +1054,7 @@ class PlotController extends Controller
                     'plot_sales.totalAmount',
                     'plot_sales.plot_status',
                     'plot_sales.plot_value',
-                    'plot_transaction.payment_method'
+                    'plot_transactions.payment_method'
                 )
         ->get();
         if(!$sales){
@@ -1123,6 +1123,7 @@ class PlotController extends Controller
                     "tds_deduction" => $dgsale->tds_deduction,
                     "final_incentive" => $dgsale->final_incentive,
                     "salary" => $dgsale->salary === 0 ? null : $dgsale->salary,
+                    "transactionStatus" => $dgsale->TransactionStatus === 0 ? 'PENDING' : 'COMPLETED' ,
                     "directUp"=> $directUp ,          
                     "groupUp" => $groupUp ,          
                     "promotion" =>  $promotion,
