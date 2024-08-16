@@ -306,10 +306,9 @@ class PlotController extends Controller
                                  break; 
                                }
                             }
-    
                         }
                     }
-                    if($agentDG->designation === 'MANAGER')
+                    else if($agentDG->designation === 'MANAGER')
                     {
                        if($agentDG->direct >= 6  && $agentDG->group >= 36)
                         {
@@ -358,7 +357,7 @@ class PlotController extends Controller
                             }
                         }
                     }
-                    if($agentDG->designation === 'SM')
+                    else if($agentDG->designation === 'SM')
                     {
                       $downLevel=DB::table('agent_levels')
                       ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
@@ -423,7 +422,7 @@ class PlotController extends Controller
                             }
                         }
                     }
-                    if($agentDG->designation === 'AGM')
+                    else if($agentDG->designation === 'AGM')
                     {
                         $downLevel=DB::table('agent_levels')
                         ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
@@ -492,7 +491,7 @@ class PlotController extends Controller
 
 
                     }
-                    if($agentDG->designation === 'GM')
+                    else if($agentDG->designation === 'GM')
                     {
                         $downLevel=DB::table('agent_levels')
                         ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
@@ -609,7 +608,7 @@ class PlotController extends Controller
                                 }
                             }
                         }
-                        if($agentPDG->designation === 'MANAGER')
+                        else if($agentPDG->designation === 'MANAGER')
                         {
                             if($agentPDG->direct >= 6  && $agentPDG->group >= 36 )
                             {
@@ -657,7 +656,7 @@ class PlotController extends Controller
                                 }
                             }
                         }
-                        if($agentPDG->designation === 'SM')
+                        else if($agentPDG->designation === 'SM')
                         {
                             $downLevel=DB::table('agent_levels')
                             ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
@@ -718,10 +717,9 @@ class PlotController extends Controller
                                        }
                                     }
                                 }
-                            }
-                            
+                            }  
                         }
-                        if($agentPDG->designation === 'AGM')
+                        else if($agentPDG->designation === 'AGM')
                         {
                             $downLevel=DB::table('agent_levels')
                             ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
@@ -787,7 +785,7 @@ class PlotController extends Controller
                                 }
                             }
                         } 
-                        if($agentPDG->designation === 'GM')
+                        else if($agentPDG->designation === 'GM')
                         {
                             $downLevel=DB::table('agent_levels')
                             ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
@@ -857,10 +855,10 @@ class PlotController extends Controller
                                     }
                                 }
                             }
-                        }
-                            
+                        }    
                         $agentLevel = $parentLevel;
                     }
+                    
                     if($CheckIncome->isEmpty())
                     {
                         $total_amount = $plot_sale->totalAmount; 
@@ -870,7 +868,6 @@ class PlotController extends Controller
                         ];
 
                         $index=1;
-
 
                         if($plot_sale->buying_type === 'EMI')
                         {
@@ -1064,6 +1061,12 @@ class PlotController extends Controller
         $user= Auth::guard('sanctum')->user();
 
         $dgsale=AgentDGSale::where('agent_id',$user->id)->first();
+
+        if(!$dgsale)
+        {
+            return response()->json(['success'=>0,'error'=>'No Direct or Group Sale Exist'],404);            
+        }
+
         if($dgsale->designation === "ASSOCIATE")
         {
             $directUp = 2;
@@ -1095,10 +1098,7 @@ class PlotController extends Controller
             $promotion = "Senior General Manager";
         }
 
-        if(!$dgsale)
-        {
-            return response()->json(['success'=>0,'error'=>'No Direct or Group Sale Exist'],404);            
-        }
+
         return response()->json(
             [
                 'success'=>1,
