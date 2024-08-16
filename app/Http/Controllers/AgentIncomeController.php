@@ -73,7 +73,7 @@ class AgentIncomeController extends Controller
                  WHEN agent_incomes.final_agent = plot_sales.agent_id THEN "direct"
                     ELSE "group"
                  END AS income_DG')
-        );
+                 )->where('agent_registers.referral_code','!=', "0");
                
         if($params){
             $agentIncome=$income->where('agent_incomes.final_agent',$params)->get();
@@ -94,6 +94,54 @@ class AgentIncomeController extends Controller
             return response()->json(['success'=>1,'Incomes'=>$agentIncome],200);
         }
     }
+
+    public function superAgentIncomeAdmin(Request $request)
+    {
+        $params=$request->query('id');
+
+        $income = DB::table('agent_incomes')
+        ->leftJoin('plot_sales', 'agent_incomes.plot_sale_id', '=', 'plot_sales.id')
+        ->leftJoin('plots', 'plot_sales.plot_id', '=', 'plots.id')
+        ->leftJoin('agent_registers','agent_incomes.final_agent','=','agent_registers.id')
+        ->select(
+                 'agent_incomes.id',
+                 'agent_incomes.final_agent',
+                 'agent_registers.fullname',
+                 'plot_sales.plot_id',
+                 'plots.plot_No',
+                 'plots.plot_type',
+                 'plot_sales.totalAmount',
+                 'agent_incomes.income_type',
+                 'agent_incomes.total_income',
+                 'agent_incomes.tds_deduction',
+                 'agent_incomes.final_income',
+                 'agent_incomes.transaction_status',
+                 DB::raw('CASE 
+                 WHEN agent_incomes.final_agent = plot_sales.agent_id THEN "direct"
+                    ELSE "group"
+                 END AS income_DG')
+                 )->where('agent_registers.referral_code','=', "0");
+               
+        if($params){
+            $agentIncome=$income->where('agent_incomes.final_agent',$params)->get();
+
+            if($agentIncome->isEmpty())
+            {
+                return response()->json(['success' => 0,'error' =>"Data don't Exist or Data Not Found"],404);
+            }
+            return response()->json(['success'=>1,'Incomes'=>$agentIncome],200);
+        }else{
+            $agentIncome=$income->get();
+            
+        if($agentIncome->isEmpty())
+        {
+            return response()->json(['success' => 0,'error' =>"Data don't Exist or Data Not Found"],404);
+        }
+ 
+            return response()->json(['success'=>1,'Incomes'=>$agentIncome],200);
+        }
+    }
+
 
     public function UpdateAgentTransaction(Request $request)
     {
