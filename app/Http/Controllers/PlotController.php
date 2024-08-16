@@ -31,9 +31,7 @@ class PlotController extends Controller
                 'site_id' => $plot ? 'nullable|integer' : 'required|integer',
                 'plot_No' => $plot ? 'nullable|string' : 'required|string', //
                 'plot_type' =>  $plot ? 'nullable|string' : 'required|string',
-                'plot_area' =>  $plot ? 'nullable|integer' : 'required|integer',
-                'price_from' =>  $plot ? 'nullable|integer' : 'required|integer',
-                'price_to' =>  $plot ? 'nullable|integer' : 'required|integer',            
+                'plot_area' =>  $plot ? 'nullable|integer' : 'required|integer', 
             ]);
     
             if ($validator->fails()) {
@@ -50,9 +48,7 @@ class PlotController extends Controller
                 ], 422);
             }   
 
-            $data=$validator->validated();
-
-           
+            $data=$validator->validated();           
 
             if($plot){
                 $plot->update($data);
@@ -61,10 +57,6 @@ class PlotController extends Controller
                     'message' => 'Plot updated successfully',
                     'Plot' => $plot
                 ], 201);
-            }
-             if($data['price_from'] >= $data['price_to'])
-            {
-                return response()->json(['success'=>0,'error' => 'Price from should be less than Price to'], 400);
             }
             $newPlot=Plot::create($data);
             return response()->json([
@@ -92,8 +84,6 @@ class PlotController extends Controller
                 'plots.plot_No',
                 'plots.plot_type',
                 'plots.plot_area',
-                'plots.price_from',
-                'plots.price_to',
                 'plots.plot_status',
                 DB::raw('IFNULL(client_controllers.client_name, \'\') AS client_name'),
                 'sites.site_name'
@@ -135,8 +125,6 @@ class PlotController extends Controller
                 'plots.plot_No',
                 'plots.plot_type',
                 'plots.plot_area',
-                'plots.price_from',
-                'plots.price_to',
                 'plots.plot_status',
                 DB::raw('IFNULL(client_controllers.client_name, \'\') AS client_name'),
             );
