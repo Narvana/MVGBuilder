@@ -116,11 +116,11 @@ class AgentRegisterController extends Controller
 
         DB::commit();
 
-            // $url = "https://www.fast2sms.com/dev/bulkV2?authorization=JqKpX9IMLieFSUH7sThu5yOElafAPw1N4Cvmc02rgWtGxbnD8jm4zNCQqYpkF8lMaXSU9rWIEeBHDiLj&route=q&message=Welcome%20to%20%20MVG%20Builders,%20your%20details%20are:%0AReferal%20ID%20:%20{$agent->referral_code}%0APassword%20:%20{$request->password}&flash=0&numbers={$agent->contact_no}";
+            $url = "https://www.fast2sms.com/dev/bulkV2?authorization=JqKpX9IMLieFSUH7sThu5yOElafAPw1N4Cvmc02rgWtGxbnD8jm4zNCQqYpkF8lMaXSU9rWIEeBHDiLj&route=q&message=Welcome%20to%20%20MVG%20Builders,%20your%20details%20are:%0AReferal%20ID%20:%20{$agent->referral_code}%0APassword%20:%20{$request->password}&flash=0&numbers={$agent->contact_no}";
 
-            // $response = Http::get($url);
-            // 'Sms Response'=>$response->json()
-            return response()->json(['success' => 1, 'data' => $agent,'level'=>$level,
+            $response = Http::get($url);
+            
+            return response()->json(['success' => 1, 'data' => $agent,'level'=>$level,'Sms Response'=>$response->json()
         ], 201);
 
         } catch (\Exception $e) {
