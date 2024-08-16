@@ -62,14 +62,14 @@ class ClientControllerController extends Controller
             {
                 return response()->json([
                     'success' => 0,
-                    'error' => "If Buying Type is CASH, then range amount should not be less than 9500",
+                    'error' => "If Buying Type is CASH, then range amount should be 9500 or above",
                 ], 409);
             }
             if($data['buying_type'] === 'EMI' && $data['rangeAmount'] < 11500)
             {
                 return response()->json([
                     'success' => 0,
-                    'error' => "If Buying Type is EMI, then range amount should not be less than 11500",
+                    'error' => "If Buying Type is EMI, then range amount should 11500 or above",
                 ], 409);
             }
 
