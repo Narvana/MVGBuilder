@@ -928,7 +928,7 @@ class PlotController extends Controller
                             $pancard= AgentRegister::find($Level->agent_id);
                             AgentIncome::create([
                                 'plot_sale_id' => $plot_sale->id, 
-                                'income_type' => 'DIRECT',
+                                'income_type' => 'DISTRIBUTED',
                                 'final_agent' => $Level->agent_id,
                                 'total_income' => $total_income,
                                 'tds_deduction' => $total_income * 0.05,  // Assuming a TDS of 5%
@@ -960,7 +960,7 @@ class PlotController extends Controller
                                 
                                 AgentIncome::create([
                                     'plot_sale_id'  => $plot_sale->id, 
-                                    'income_type' => 'DIRECT',
+                                    'income_type' => 'DISTRIBUTED',
                                     'final_agent'   => $parentID,
                                     'total_income'  => $mvg_income,
                                     'tds_deduction' => $mvg_income * 0.05,  // Assuming a TDS of 5%
