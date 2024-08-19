@@ -292,11 +292,11 @@ class PlotController extends Controller
 
                                if($Total >= 4)
                                {
-                                    return response()->json('Hello'); 
+                                    // return response()->json('Hello'); 
 
                                     $incentive = 10 * 5000;
                                      
-                                    return response()->json($incentive);
+                                    // return response()->json($incentive);
 
                                     $tds=$incentive * 0.05;
                                     $final=$incentive - $tds;
@@ -335,9 +335,11 @@ class PlotController extends Controller
  
                                 foreach($DAgent as $DA)
                                 {
+                                    
                                   $DAid=$DA->agent_id;
                                   $DGS=AgentDGSale::where('agent_id',$DAid)->first();
                                   $DGtotal=$DGS->direct + $DGS->group;
+
                                   if($DGS->designation === 'MANAGER')
                                   {
                                       $incentive=$incentive + ($DGtotal * 3000);
@@ -592,7 +594,6 @@ class PlotController extends Controller
                             if($agentPDG->direct >= 2  && $agentPDG->group >=8)
                             {
                                 $downAgent=AgentLevels::where('parent_id',$agentParent->id)->get();
-
                                 foreach ($downAgent as $dagent) 
                                 {
                                     // Access each agent's properties
