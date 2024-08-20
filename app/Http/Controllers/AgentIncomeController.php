@@ -16,7 +16,7 @@ class AgentIncomeController extends Controller
 {
     //
     // public function createIncome()
-    public function agentIncome(Request $request)
+    public function agentIncomeDISTRIBUTED(Request $request)
     {
 
         $params=Auth::guard('sanctum')->user();
@@ -38,7 +38,10 @@ class AgentIncomeController extends Controller
                  WHEN agent_incomes.final_agent = plot_sales.agent_id THEN "direct"
                     ELSE "group"
                  END AS income_DG')
-                )->where('agent_incomes.final_agent',$params->id)->get();
+                )
+                ->where('agent_incomes.final_agent',$params->id)
+                ->where('agent_incomes.income_type', '=' , 'DISTRIBUTED')
+                ->get();
 
         if($income->isEmpty())
         {
@@ -47,6 +50,43 @@ class AgentIncomeController extends Controller
 
                 return response()->json(['success'=>1,'Incomes'=>$income],200);
     }
+
+    public function agentIncomeCORPUS(Request $request)
+    {
+
+        $params=Auth::guard('sanctum')->user();
+
+        $income = DB::table('agent_incomes')
+        ->leftJoin('plot_sales', 'agent_incomes.plot_sale_id', '=', 'plot_sales.id')
+        ->leftJoin('plots', 'plot_sales.plot_id', '=', 'plots.id')
+        ->select(
+                 'plot_sales.plot_id',
+                 'plots.plot_No',
+                 'plots.plot_type',
+                 'plot_sales.totalAmount',
+                 'agent_incomes.income_type',
+                 'agent_incomes.total_income',
+                 'agent_incomes.tds_deduction',
+                 'agent_incomes.final_income',
+                 'agent_incomes.transaction_status',
+                 DB::raw('CASE 
+                 WHEN agent_incomes.final_agent = plot_sales.agent_id THEN "direct"
+                    ELSE "group"
+                 END AS income_DG')
+                )
+                ->where('agent_incomes.final_agent',$params->id)
+                ->where('agent_incomes.total_income','!=', "0")
+                ->where('agent_incomes.income_type', '=' , 'CORPUS')
+                ->get();
+
+        if($income->isEmpty())
+        {
+            return response()->json(['success' => 0,'error' =>"Data don't Exist or Data Not Found"],404);
+        }
+
+                return response()->json(['success'=>1,'Incomes'=>$income],200);
+    }
+
 
     public function agentIncomeAdmin(Request $request)
     {
@@ -97,6 +137,7 @@ class AgentIncomeController extends Controller
 
     public function superAgentIncomeAdmin(Request $request)
     {
+
         $params=$request->query('id');
 
         $income = DB::table('agent_incomes')
@@ -133,11 +174,11 @@ class AgentIncomeController extends Controller
         }else{
             $agentIncome=$income->get();
             
-        if($agentIncome->isEmpty())
-        {
-            return response()->json(['success' => 0,'error' =>"Data don't Exist or Data Not Found"],404);
-        }
- 
+            if($agentIncome->isEmpty())
+            {
+                return response()->json(['success' => 0,'error' =>"Data don't Exist or Data Not Found"],404);
+            }
+    
             return response()->json(['success'=>1,'Incomes'=>$agentIncome],200);
         }
     }
