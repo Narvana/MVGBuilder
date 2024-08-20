@@ -87,6 +87,29 @@ class AgentIncomeController extends Controller
                 return response()->json(['success'=>1,'Incomes'=>$income],200);
     }
 
+    public function agentIncomeThird(Request $request)
+    {
+        $params=Auth::guard('sanctum')->user();
+
+        $income=DB::table('agent_incomes')
+        ->leftJoin('agent_registers','agent_incomes.final_agent','=','agent_registers.id')
+        ->leftJoin('agent_d_g_sales','agent_incomes.final_agent','=','agent_d_g_sales.agent_id')
+        ->leftJoin('plot_sales','agent_incomes.plot_sale_id','=','plot_sales.id')
+        ->leftJoin('plots','plot_sales.plot_id','=','plots.id')
+        ->select(
+            'plots.id as Plot_ID',
+            'plots.plot_No',
+            'plot_sales.id as Plot_Sale_ID',
+            DB::raw('MAX(CASE WHEN agent_incomes.income_type = "CORPUS" AND agent_incomes.total_income > 0 THEN 1 ELSE 0 END) as income_CORPUS'),
+            DB::raw('MAX(CASE WHEN agent_incomes.income_type = "DISTRIBUTED" AND agent_incomes.total_income > 0 THEN 1 ELSE 0 END) as income_DISTRIBUTED')
+        )
+        ->where('agent_incomes.final_agent', $params->id)
+        ->groupBy('plots.id', 'plots.plot_No', 'plot_sales.id')
+        ->get();
+        return response()->json(['success'=>1,'Incomes'=>$income],200);
+
+    } 
+
 
     public function agentIncomeAdmin(Request $request)
     {
@@ -113,7 +136,9 @@ class AgentIncomeController extends Controller
                  WHEN agent_incomes.final_agent = plot_sales.agent_id THEN "direct"
                     ELSE "group"
                  END AS income_DG')
-                 )->where('agent_registers.referral_code','!=', "0");
+                 )
+                 ->where('agent_incomes.total_income','!=', "0")
+                 ->where('agent_registers.referral_code','!=', "0");
                
         if($params){
             $agentIncome=$income->where('agent_incomes.final_agent',$params)->get();
@@ -135,9 +160,10 @@ class AgentIncomeController extends Controller
         }
     }
 
+
+
     public function superAgentIncomeAdmin(Request $request)
     {
-
         $params=$request->query('id');
 
         $income = DB::table('agent_incomes')
@@ -161,7 +187,9 @@ class AgentIncomeController extends Controller
                  WHEN agent_incomes.final_agent = plot_sales.agent_id THEN "direct"
                     ELSE "group"
                  END AS income_DG')
-                 )->where('agent_registers.referral_code','=', "0");
+                 )
+                 ->where('agent_incomes.total_income','!=', "0")
+                 ->where('agent_registers.referral_code','=', "0");
                
         if($params){
             $agentIncome=$income->where('agent_incomes.final_agent',$params)->get();
