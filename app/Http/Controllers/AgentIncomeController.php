@@ -214,43 +214,48 @@ class AgentIncomeController extends Controller
 
     public function UpdateAgentTransaction(Request $request)
     {
-        $params=$request->query('id');
-        $agentTransaction=AgentIncome::where('id',$params)->first();
-
-        $validator=Validator::make($request->all(),[
-            'transaction_status' => 'required|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            $errors = $validator->errors()->all(); // Get all error messages
-            $formattedErrors = [];
+        try {
+            //code...
+            $params=$request->query('id');
+            $agentTransaction=AgentIncome::where('id',$params)->first();
     
-            foreach ($errors as $error) {
-                $formattedErrors[] = $error;
+            $PlotSale=Plot_Sale::where('id',$agentTransaction->plot_sale_id)->first();
+    
+            if(!$agentTransaction)
+            {
+                return response()->json([
+                    'success'=>0,
+                    'message' => 'No Agent Transaction Found',
+                ], 404);
             }
-    
-            return response()->json([
-                'success' => 0,
-                'error' => $formattedErrors[0]
-            ], 422);
-        } 
+            
+            if ($PlotSale->plot_value >= 30 && $PlotSale->plot_value < 50) {
+                $transactionStatus = "PARTIALLY COMPLETED";
+            } else if ($PlotSale->plot_value >= 50) {
+                $transactionStatus = "COMPLETED";
+            } 
+            else {
+                $transactionStatus = "PENDING";
+            }
         
-        $data=$validator->validated();
-
-        if($agentTransaction)
-        {
-            $agentTransaction->update($data);
-
+            // Update the transaction status
+            $agentTransaction->transaction_status = $transactionStatus;
+            $agentTransaction->save();
+    
             return response()->json([
                 'success'=>1,
                 'message' => 'Transacation updated',
                 'agent_transaction' => $agentTransaction 
             ], 201);    
+
+        } catch (\Throwable $th) {
+            //throw $th;
+            return response()->json([
+                'success' => 0,
+                'error' => 'Internal Server Error. ' . $th->getMessage()
+            ], 500);
         }
-        return response()->json([
-            'success'=>0,
-            'message' => 'No Agent Transaction Found',
-        ], 404);
+
     }
 
 
