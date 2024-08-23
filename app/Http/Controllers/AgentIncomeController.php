@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\AgentDGSale;
 use App\Models\AgentIncome;
 use App\Models\Plot_Sale;
 use Illuminate\Http\Request;
@@ -160,8 +161,6 @@ class AgentIncomeController extends Controller
         }
     }
 
-
-
     public function superAgentIncomeAdmin(Request $request)
     {
         $params=$request->query('id');
@@ -211,6 +210,65 @@ class AgentIncomeController extends Controller
         }
     }
 
+    public function AdminAgentDGSale(Request $request)
+    {
+        $agentDGAdmin = DB::table('agent_d_g_sales')
+        ->leftJoin('agent_registers','agent_d_g_sales.agent_id','=','agent_registers.id')
+        ->select(
+            'agent_registers.fullname',
+            'agent_registers.referral_code',
+            'agent_d_g_sales.direct',
+            'agent_d_g_sales.group',
+            'agent_d_g_sales.designation',
+            'agent_d_g_sales.incentive',
+            'agent_d_g_sales.tds_deduction',
+            'agent_d_g_sales.final_incentive',
+            'agent_d_g_sales.salary',
+            'agent_d_g_sales.TransactionStatus',
+        )->where('agent_d_g_sales.designation', '!=' ,'ASSOCIATE')->get();
+
+        if($agentDGAdmin->isEmpty())
+        {
+            return response()->json(['success' => 0,'error' =>"Data don't Exist or Data Not Found"],404);
+        }
+        return response()->json(['success'=>1,'agentDG'=>$agentDGAdmin],200);
+    }
+
+    public function UpdateAgentAdminTransaction(Request $request)
+    {
+        try {
+            //code...
+            $params=$request->query('id');
+            $agentTransaction=AgentDGSale::where('id',$params)->first();
+    
+            if(!$agentTransaction)
+            {
+                return response()->json([
+                    'success'=>0,
+                    'message' => 'No Agent Transaction Found',
+                ], 404);
+            }
+
+            $Status = "COMPLETED";
+
+            $agentTransaction->transactionStatus=$Status;
+
+            $agentTransaction->save();
+  
+            return response()->json([
+                'success'=>1,
+                'message' => 'Transaction Status updated',
+                'agent_transaction' => $agentTransaction
+            ], 201);    
+
+        } catch (\Throwable $th) {
+            //throw $th;
+            return response()->json([
+                'success' => 0,
+                'error' => 'Internal Server Error. ' . $th->getMessage()
+            ], 500);
+        }
+    }
 
     public function UpdateAgentTransaction(Request $request)
     {
@@ -244,7 +302,7 @@ class AgentIncomeController extends Controller
     
             return response()->json([
                 'success'=>1,
-                'message' => 'Transacation updated',
+                'message' => 'Transaction Status Updated',
                 'agent_transaction' => $agentTransaction 
             ], 201);    
 
@@ -255,9 +313,7 @@ class AgentIncomeController extends Controller
                 'error' => 'Internal Server Error. ' . $th->getMessage()
             ], 500);
         }
-
     }
-
 
     public function agentSales(Request $request)
     {
