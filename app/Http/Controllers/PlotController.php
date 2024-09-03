@@ -187,7 +187,7 @@ class PlotController extends Controller
 
             $plot_sale = Plot_Sale::findOrFail($data['plot_sale_id']);
 
-            $VALUE=$plot_sale->plot_value ? $plot_sale->plot_value : null;
+           $VALUE=$plot_sale->plot_value ? $plot_sale->plot_value : null;
 
             $plot = Plot::where('id',$plot_sale->plot_id)->first();
 
@@ -201,15 +201,17 @@ class PlotController extends Controller
             else
             {
                 $transaction_id = 'MVG' . Str::random(10);
-        
+ 
                 // Check if there's an existing transaction
                 $existingTransaction = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])->exists();
+       
 
                 $amountPaid = PlotTransaction::where('plot_sale_id', $data['plot_sale_id'])->sum('amount');
             
                 // If no existing transaction, validate amount and create a new transaction
                 
                 if (!$existingTransaction) {
+
                     if ($data['amount'] > $plot_sale->totalAmount) {
                         return response()->json([
                             'success' => 0,
@@ -245,7 +247,7 @@ class PlotController extends Controller
                         'payment_method' => $data['payment_method']
                     ]);
                 }
-            
+
                 // Calculate the total amount paid and determine the plot status
                 $amountPaid += $data['amount'];
             
@@ -253,7 +255,7 @@ class PlotController extends Controller
             
                 $status = $percentagePaid < 30 ? 'PENDING' :
                           ($percentagePaid < 100 ? 'BOOKED' : 'COMPLETED');
-            
+                          
                 $plot_sale->update([
                     'plot_status' => $status,
                     'plot_value' => $percentagePaid
@@ -292,12 +294,8 @@ class PlotController extends Controller
 
                                if($Total >= 4)
                                {
-                                    // return response()->json('Hello'); 
 
                                     $incentive = 10 * 5000;
-                                     
-                                    // return response()->json($incentive);
-
                                     $tds=$incentive * 0.05;
                                     $final=$incentive - $tds;
                                     $agent->update([
@@ -335,7 +333,7 @@ class PlotController extends Controller
  
                                 foreach($DAgent as $DA)
                                 {
-                                    
+
                                   $DAid=$DA->agent_id;
                                   $DGS=AgentDGSale::where('agent_id',$DAid)->first();
                                   $DGtotal=$DGS->direct + $DGS->group;
@@ -990,9 +988,21 @@ class PlotController extends Controller
                 }
                 else if($status === 'BOOKED' && $plot_sale->TDG_status === 1)
                 {
+
+                    // return response()->json('HELLO');
+
                     if($VALUE >= 50)
                     {
-                        exit;
+                        DB::commit();
+
+                        return response()->json([
+                            'success' => 1,
+                            'message' => 'Transaction Added',
+                            'transaction' => $newTransaction,
+                            'plot_sale' => $plot_sale,
+                            'plot' => $plot
+                        ], 201);
+                        
                     }
                     else if($VALUE < 50)
                     {
