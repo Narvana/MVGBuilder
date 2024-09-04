@@ -492,26 +492,53 @@ class AgentRegisterController extends Controller
 
         // Updated Code
 
-         $agent = DB::table('agent_registers')
-                 ->leftJoin('agent_levels','agent_registers.id','=','agent_levels.agent_id')
-                 ->leftJoin('agent_registers as parent','agent_levels.parent_id', '=' , 'parent.id')
-                 ->select(
-                    'agent_registers.id',
-                    'agent_registers.referral_code',
-                    'agent_registers.pancard_no',
-                    'agent_registers.contact_no',
-                    'agent_registers.fullname',
-                    'agent_registers.email',
-                    'agent_registers.designation',
-                    'agent_registers.address',
-                    'agent_registers.DOB',
-                    'agent_levels.level',
-                    'agent_levels.parent_id',
-                    'parent.fullname as Sponser_Name',
-                    'parent.referral_code as Sponser_Referral'
-                    )
-                    ->where('agent_registers.referral_code','!=', "0")
-                    ->get();
+    $agent = DB::table('agent_registers')
+    ->leftJoin('agent_levels', 'agent_registers.id', '=', 'agent_levels.agent_id')
+    ->leftJoin('agent_registers as parent', 'agent_levels.parent_id', '=', 'parent.id')
+    ->leftJoin('agent_incomes', 'agent_registers.id', '=', 'agent_incomes.final_agent')
+    ->select(
+        'agent_registers.id',
+        'agent_registers.referral_code',
+        'agent_registers.pancard_no',
+        'agent_registers.contact_no',
+        'agent_registers.fullname',
+        'agent_registers.email',
+        'agent_registers.designation',
+        'agent_registers.address',
+        'agent_registers.DOB',
+        'agent_levels.level',
+        'agent_levels.parent_id',
+        'parent.fullname as Sponser_Name',
+        'parent.referral_code as Sponser_Referral',
+        DB::raw('ROUND(SUM(CASE 
+        WHEN agent_incomes.transaction_status = "PARTIALLY COMPLETED" 
+        THEN agent_incomes.final_income / 2 
+        ELSE 0 
+            END) 
+        + 
+        SUM(CASE 
+                WHEN agent_incomes.transaction_status = "COMPLETED" 
+                THEN agent_incomes.final_income 
+                ELSE 0 
+            END)) as Income_Paid')
+        )
+        ->where('agent_registers.referral_code', '!=', "0")
+        ->groupBy(
+            'agent_registers.id',
+            'agent_registers.referral_code',
+            'agent_registers.pancard_no',
+            'agent_registers.contact_no',
+            'agent_registers.fullname',
+            'agent_registers.email',
+            'agent_registers.designation',
+            'agent_registers.address',
+            'agent_registers.DOB',
+            'agent_levels.level',
+            'agent_levels.parent_id',
+            'parent.fullname',
+            'parent.referral_code'
+        )
+        ->get();
 
         if($agent->isEmpty())
         {
