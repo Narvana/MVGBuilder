@@ -12,9 +12,11 @@ class Plot extends Model
         'site_id',
         'plot_No',
         'plot_type',
+        'plot_length',
+        'plot_width',
         'plot_area',
-        'price_from',
-        'price_to',
+        // 'price_from',
+        // 'price_to',
         'plot_status'
     ];
 }
