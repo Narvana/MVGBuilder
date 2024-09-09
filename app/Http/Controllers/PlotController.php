@@ -29,7 +29,7 @@ class PlotController extends Controller
             $plot=Plot::where('id',$params)->first();            
             $validator=Validator::make($request->all(),[
                 'site_id' => $plot ? 'nullable|integer' : 'required|integer',
-                'plot_No' => $plot ? 'nullable|string' : 'required|string', //
+                'plot_No' => $plot ? 'nullable|string|unique:plots,plot_No' : 'required|string|unique:plots,plot_No', //
                 'plot_type' =>  $plot ? 'nullable|string' : 'required|string',
                 'plot_area' =>  $plot ? 'nullable|integer' : 'required|integer', 
             ]);
@@ -47,6 +47,8 @@ class PlotController extends Controller
                     'error' => $formattedErrors[0]
                 ], 422);
             }   
+
+
 
             $data=$validator->validated();           
 
