@@ -75,6 +75,7 @@ class PlotController extends Controller
     {
         $params=$request->query('id');
         $site=$request->query('site');
+        $area = $request->query('area'); 
         try {
             //code...
             $sales = DB::table('plots')
@@ -92,13 +93,18 @@ class PlotController extends Controller
                 DB::raw('IFNULL(client_controllers.client_name, \'\') AS client_name'),
                 'sites.site_name'
             );
+            
+            if($site)
+            {
+                $sales=$sales->where('sites.site_name',$site);
+            }
+            if($area)
+            {
+                $sales=$sales->where('plots.plot_area',$area);
+            }
             if($params)
             {
                 $sales=$sales->where('plots.id',$params);
-            }
-            else if($site)
-            {
-                $sales=$sales->where('sites.site_name',$site);
             }
 
             $sales=$sales->get();
@@ -109,7 +115,6 @@ class PlotController extends Controller
                     'error' => 'No Data Found'
                 ], 404);
             }
-
             return response()->json(['success'=>1 ,'sales'=>$sales]);
         } catch (\Throwable $th) {
             //throw $th;
@@ -119,11 +124,15 @@ class PlotController extends Controller
 
     public function showPlotAdmin(Request $request)
     {
-        $params = $request->query('id');
+        $params=$request->query('id');
+        $site=$request->query('site');
+        $area = $request->query('area'); 
         try {
             //code...
             $sales = DB::table('plots')
             ->leftJoin('plot_sales', 'plots.id', '=', 'plot_sales.plot_id')
+            ->leftJoin('client_controllers', 'plot_sales.client_id', '=', 'client_controllers.id')
+            ->leftJoin('sites','plots.site_id','=','sites.id')            
             ->select(
                 'plots.id',
                 'plots.plot_No',
@@ -133,19 +142,31 @@ class PlotController extends Controller
                 'plots.plot_width',
                 'plots.plot_status',
                 DB::raw('IFNULL(client_controllers.client_name, \'\') AS client_name'),
+                'sites.site_name'
             );
+            
+            if($site)
+            {
+                $sales=$sales->where('sites.site_name',$site);
+            }
+            if($area)
+            {
+                $sales=$sales->where('plots.plot_area',$area);
+            }
             if($params)
             {
                 $sales=$sales->where('plots.id',$params);
             }
-             $sales=$sales->get();
+
+            $sales=$sales->get();
+
             if($sales->isEmpty()){
                 return response()->json([
                     'success' => 0,
                     'error' => 'No Data Found'
                 ], 404);
             }
-                return response()->json(['success'=>1 ,'sales'=>$sales]);
+            return response()->json(['success'=>1 ,'sales'=>$sales]);
         } catch (\Throwable $th) {
             //throw $th;
             return response()->json(['success'=>0, 'error' => $th->getMessage()], 500);
