@@ -15,7 +15,40 @@ use Illuminate\Support\Facades\Validator;
 
 class ClientControllerController extends Controller
 {
-    //
+    /**
+     * @group Clients Management
+     *
+     * Add a new client or Existing one.
+     *
+     * This endpoint allows you to add a new client or a existing client and assign a plot to that client.
+     *
+     * @bodyParam client_name string required The name of the client. Example: John Doe
+     * @bodyParam client_contact string required The client's contact number (must be 10 digits). Example: 1234567890
+     * @bodyParam client_address string required The client's address. Example: 123 Main Street
+     * @bodyParam client_city string The city of the client. Example: New York
+     * @bodyParam client_state string required The state of the client. Example: NY
+     * @bodyParam plot_id integer required The ID of the plot to assign to the client. Example: 1
+     * @bodyParam buying_type string required The type of purchase (CASH or EMI). Example: CASH
+     * @bodyParam rangeAmount integer required The amount for the purchase. Example: 10000
+     * @bodyParam initial_amount integer required The initial payment amount. Example: 2000
+     *
+     * @response 201 {
+     *    "success": 1,
+     *    "message": "Client Registered successfully",
+     *    "client": {...},
+     *    "plot_sale": {...},
+     *    "plot": {...}
+     * }
+     * @response 422 {
+     *    "success": 0,
+     *    "error": "Validation error message"
+     * }
+     * @response 404 {
+     *    "success": 0,
+     *    "error": "Plot not found"
+     * }
+     */
+
     public function addClient(Request $request){
         try {
             DB::beginTransaction();
@@ -62,14 +95,14 @@ class ClientControllerController extends Controller
             {
                 return response()->json([
                     'success' => 0,
-                    'error' => "If Buying Type is CASH, then amount should be 9500 or above",
+                    'error' => "CASH, Must be 9,500 or above",
                 ], 409);
             }
             if($data['buying_type'] === 'EMI' && $data['rangeAmount'] < 11500)
             {
                 return response()->json([
                     'success' => 0,
-                    'error' => "If Buying Type is EMI, then amount should 11500 or above",
+                    'error' => "EMI, Must be 11,500 or above",
                 ], 409);
             }
 
@@ -153,6 +186,8 @@ class ClientControllerController extends Controller
             'success'=>0, 'error' => 'Internal Server Error' . $th->getMessage()], 500);
         }
     }
+
+    
 
     public function showClient(Request $request)
     {
@@ -281,4 +316,62 @@ class ClientControllerController extends Controller
         }
     }
 
+
+    public function ClientLedgerADMIN(Request $request)
+    {
+        $id= $request->query('id');
+
+        $siteID=$request->query('siteID');
+        if(!$siteID)
+        {
+            return response()->json(
+                [
+                    'success'=>0,
+                    'message'=>'Please Select Site Name First'
+                ],200);
+        }
+        $Ledger = DB::table('client_controllers')
+        ->leftJoin('plot_sales', 'client_controllers.id', '=', 'plot_sales.client_id')
+        ->leftJoin('plots', 'plot_sales.plot_id', '=', 'plots.id')
+        ->leftJoin('sites', 'plots.site_id', '=', 'sites.id')
+        ->leftJoin('plot_transactions', 'plot_sales.id', '=', 'plot_transactions.plot_sale_id')
+        ->select(
+            'client_controllers.id',
+            'client_controllers.client_name',
+            'client_controllers.client_contact',
+            'sites.site_name',
+            'plots.plot_area',
+            'plot_sales.plot_value',
+            'plot_transactions.transaction_id',
+            'plot_transactions.amount',
+            DB::raw('DATE(plot_transactions.created_at) as transaction_date')
+        )
+        ->where('plot_sales.plot_status', 'BOOKED')
+        ->whereIn('sites.id',[$siteID]);
+
+        if($id)
+        {
+          $Client=$Ledger->where('client_controllers.id',$id)->get();
+            if($Client->isEmpty())
+            {
+                return response()->json(
+                [
+                    'success'=>0,
+                    'message'=> "This client don't exist in this Site"
+                ],200);   
+            }
+            return response()->json(
+                [
+                    'success'=>1,
+                    'data'=>
+                        $Client
+                ],200);
+        }
+        $Client=$Ledger->get();
+        return response()->json(
+            [
+                'success'=>1,
+                'data'=>$Client
+            ],200);
+    }
 }

@@ -6,10 +6,7 @@ use App\Http\Controllers\AgentRegisterController;
 use App\Http\Controllers\ClientControllerController;
 use App\Http\Controllers\PlotController;
 use App\Http\Controllers\SiteController;
-use App\Models\AgentIncome;
-use App\Models\PlotTransaction;
-use Illuminate\Http\Request;
-use Illuminate\Routing\RouteRegistrar;
+
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -69,7 +66,7 @@ Route::middleware(['auth:sanctum','role:agent'])->group(function () {
     
     Route::get('/agent/Client/Info', [AgentRegisterController::class, 'agentClientInfo']);
 
-    Route::get('/Agent/Sales',[AgentIncomeController::class,'agentSales']);
+    Route::get('/Agent/Sales',[AgentIncomeController::class,'AgentSalesYearMonth']);
 
     Route::get('/Agent/DG/Sales',[PlotController::class,'AgentDGsale']);
 
@@ -110,17 +107,18 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
 
     Route::get('/Super/Agent/Income/Admin',[AgentIncomeController::class,'superAgentIncomeAdmin']);
     
-    Route::put('/Update/Transaction/Admin',[AgentIncomeController::class,'UpdateAgentTransaction']);
+    Route::put('/Update/Transaction/Admin',[AgentIncomeController::class,'UpdateAgentIncomeTransaction']);
 
-    Route::put('/Update/Transaction/DG/Admin',[AgentIncomeController::class,'UpdateAgentAdminTransaction']);
+    Route::put('/Update/Transaction/DG/Admin',[AgentIncomeController::class,'UpdateAgentDGTransaction']);
     
     Route::get('/Agent/DG/Admin',[AgentIncomeController::class,'AdminAgentDGSale']);
     
+    Route::get('/Admin/Client/Legder',[ClientControllerController::class,'ClientLedgerADMIN']);
 });
 
 
 
-// Route::get('/show/Site',[SiteController::class,'showSite']);
+Route::get('/show/Site',[SiteController::class,'showSite']);
 
 // Route::get('/show/Plot',[PlotController::class,'showPlot']);
 
@@ -132,3 +130,5 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
 
 // Forgot Password
 Route::post('/forgot/Password/agent', [AgentRegisterController::class, 'forgotPassword']);
+
+Route::get('/hello', [ClientControllerController::class, 'Hello']);
