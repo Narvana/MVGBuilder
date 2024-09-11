@@ -31,9 +31,9 @@ class PlotController extends Controller
                 'site_id' => $plot ? 'nullable|integer' : 'required|integer',
                 'plot_No' => $plot ? 'nullable|string|unique:plots,plot_No' : 'required|string|unique:plots,plot_No', //
                 'plot_type' =>  $plot ? 'nullable|string' : 'required|string',
-                'plot_length' =>'nullable|integer',
-                'plot_width'=>'nullable|integer', 
-                'plot_area' =>  $plot ? 'nullable|integer' : 'required|integer', 
+                'plot_length' => 'nullable|numeric',
+                'plot_width'  => 'nullable|numeric',
+                'plot_area'   => $plot ? 'nullable|numeric' : 'required|numeric',
             ]);
     
             if ($validator->fails()) {
@@ -172,7 +172,6 @@ class PlotController extends Controller
             return response()->json(['success'=>0, 'error' => $th->getMessage()], 500);
         }
     }
-
 
     public function removePlot(Request $request){
         try {
@@ -1174,6 +1173,11 @@ class PlotController extends Controller
                 ]
             ],200);
     }
+
+
+
+
+
 }
 
 // DG Sale
