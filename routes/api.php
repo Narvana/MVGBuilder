@@ -89,12 +89,12 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
 
     Route::get('/show/Site/admin',[SiteController::class,'showSite']);
     
-    Route::get('/show/Plot/admin',[PlotController::class,'showPlot']);
+    Route::get('/show/Plot/admin',[PlotController::class,'showPlotAdmin']);
 
     Route::get('/show/Client/admin',[ClientControllerController::class,'showClient']);
 
     Route::delete('remove/Client',[ClientControllerController::class,'removeClient']);
-    // 
+
     Route::post('/plot/transaction',[PlotController::class,'PlotTransaction']);
 
     Route::get('/show/Plot/Sales/admin',[PlotController::class,'showPlotSales']);
@@ -119,6 +119,12 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
 
 
 Route::get('/show/Site',[SiteController::class,'showSite']);
+
+Route::get('/show/Plot/Area',[SiteController::class,'showPlotArea']);
+
+Route::get('/Daily/Transactions/Client',[ClientControllerController::class,'DailyTransactionClient']);
+
+Route::get('/Daily/Transactions/Agent',[AgentIncomeController::class,'DailyTransactionAgent']);
 
 // Route::get('/show/Plot',[PlotController::class,'showPlot']);
 
