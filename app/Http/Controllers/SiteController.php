@@ -19,9 +19,10 @@ class SiteController extends Controller
             $site = Site::find($params);
             $validator=Validator::make($request->all(),[
                 'site_name' => $site ? 'nullable|string|unique:sites,site_name' :'required|string|unique:sites,site_name',
-                'site_areas' => $site ? 'nullable|array': 'required|array',
+                'site_areas' => 'nullable|array',
                 'site_areas.*' => 'nullable|numeric',
             ]);
+
             if ($validator->fails()) {
                 $errors = $validator->errors()->all(); // Get all error messages
                 $formattedErrors = [];
@@ -37,6 +38,11 @@ class SiteController extends Controller
             }
             $data=$validator -> validated();
 
+            if (!empty($data['site_areas'])) {
+                $data['site_areas'] = json_encode($data['site_areas']);
+            }
+
+
             if ($site) {
                 // Update the site
                 $site->update($data);
@@ -46,12 +52,12 @@ class SiteController extends Controller
                     'message' => 'Site updated successfully',
                     'site' => $site
                 ], 201);
-            } else {
-                return response()->json([
-                    'success' => 0,
-                    'error' => 'Site not found',
-                ], 404);
             }
+            if(empty($data['site_areas']))
+            {
+                $data['site_areas'] = json_encode([]);
+            }
+            // return response()->json($data['site_areas']);
             $newSite=Site::create($data);
             return response()->json([
                 'success'=>1, 
