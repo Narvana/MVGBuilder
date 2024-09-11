@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Site;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class SiteController extends Controller
@@ -14,8 +15,12 @@ class SiteController extends Controller
     {
         try {
             //code...
+            $params=$request->query('id');
+            $site = Site::find($params);
             $validator=Validator::make($request->all(),[
-                'site_name' => 'required|string|unique:sites,site_name'
+                'site_name' => $site ? 'nullable|string|unique:sites,site_name' :'required|string|unique:sites,site_name',
+                'site_areas' => $site ? 'nullable|array': 'required|array',
+                'site_areas.*' => 'nullable|numeric',
             ]);
             if ($validator->fails()) {
                 $errors = $validator->errors()->all(); // Get all error messages
@@ -24,33 +29,28 @@ class SiteController extends Controller
                 foreach ($errors as $error) {
                     $formattedErrors[] = $error;
                 }
-        
+
                 return response()->json([
                     'success' => 0,
                     'error' => $formattedErrors[0]
                 ], 422);
             }
             $data=$validator -> validated();
-            $params=$request->query('id');
-            if ($params) {
-                // Find the site by id
-                $site = Site::find($params);
-        
-                if ($site) {
-                    // Update the site
-                    $site->update($data);
-        
-                    return response()->json([
-                        'success' => 1,
-                        'message' => 'Site updated successfully',
-                        'site' => $site
-                    ], 201);
-                } else {
-                    return response()->json([
-                        'success' => 0,
-                        'error' => 'Site not found',
-                    ], 404);
-                }
+
+            if ($site) {
+                // Update the site
+                $site->update($data);
+    
+                return response()->json([
+                    'success' => 1,
+                    'message' => 'Site updated successfully',
+                    'site' => $site
+                ], 201);
+            } else {
+                return response()->json([
+                    'success' => 0,
+                    'error' => 'Site not found',
+                ], 404);
             }
             $newSite=Site::create($data);
             return response()->json([
@@ -64,7 +64,8 @@ class SiteController extends Controller
             }
         }
 
-    public function showSite(Request $request) {
+ 
+        public function showSite(Request $request) {
         try {
             //code...
             $sites=Site::get();
@@ -85,6 +86,22 @@ class SiteController extends Controller
         } catch (\Throwable $th) {
             return response()->json(['success'=>0, 'error' => 'Internal Server Error. ' . $th->getMessage()], 500);
         }
+    }
+
+    public function showPlotArea(Request $request)
+    {
+        $areas=Site::pluck('site_areas');
+        // return response()->json(['success'=>1,'areas'=>$area],200);
+        $uniqueAreas = $areas->flatMap(function ($siteAreas) {
+            // Decode JSON string to array
+            return json_decode($siteAreas, true);
+        })->unique()->sort()->values();
+    
+        // Return the result in JSON format
+        return response()->json([
+            'success' => 1,
+            'areas' => $uniqueAreas
+        ], 200);
     }
 
     public function removeSite(Request $request)
