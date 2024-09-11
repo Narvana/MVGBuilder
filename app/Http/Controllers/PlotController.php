@@ -11,6 +11,7 @@ use App\Models\AgentRegister;
 use App\Models\Plot;
 use App\Models\PlotTransaction;
 use App\Models\Plot_Sale;
+use App\Models\Site;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ class PlotController extends Controller
             //code...
             $params=$request->query('id');
             $plot=Plot::where('id',$params)->first(); 
+            $site = Site::find($request->site_id);
             $validator=Validator::make($request->all(),[
                 'site_id' => $plot ? 'nullable|integer|exists:sites,id' : 'required|integer|exists:sites,id',
                 'plot_No' => [
@@ -41,7 +43,9 @@ class PlotController extends Controller
                 'plot_width'  => 'nullable|numeric',
                 'plot_area'   => $plot ? 'nullable|numeric' : 'required|numeric',
             ],[
-                'plot_No.unique' => 'The plot number has already been taken for site ID: ' . $request->site_id
+                'plot_No.unique' => $site 
+                ? 'The plot number has already been taken for the site: ' . $site->site_name 
+                : "Error"
             ]);
     
             if ($validator->fails()) {
