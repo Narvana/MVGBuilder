@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Validation\Rule;
 
 class PlotController extends Controller
 {
@@ -28,12 +28,20 @@ class PlotController extends Controller
             $params=$request->query('id');
             $plot=Plot::where('id',$params)->first(); 
             $validator=Validator::make($request->all(),[
-                'site_id' => $plot ? 'nullable|integer' : 'required|integer',
-                'plot_No' => $plot ? 'nullable|string|unique:plots,plot_No' : 'required|string|unique:plots,plot_No', //
+                'site_id' => $plot ? 'nullable|integer|exists:sites,id' : 'required|integer|exists:sites,id',
+                'plot_No' => [
+                    $plot ? 'nullable' : 'required',   // Nullable if plot exists, required otherwise
+                    'string',                          // Ensure plot_No is a string
+                    Rule::unique('plots')->where(function ($query) use ($request) {
+                        return $query->where('site_id', $request->site_id);
+                    })
+                ],
                 'plot_type' =>  $plot ? 'nullable|string' : 'required|string',
                 'plot_length' => 'nullable|numeric',
                 'plot_width'  => 'nullable|numeric',
                 'plot_area'   => $plot ? 'nullable|numeric' : 'required|numeric',
+            ],[
+                'plot_No.unique' => 'The plot number has already been taken for site ID: ' . $request->site_id
             ]);
     
             if ($validator->fails()) {
