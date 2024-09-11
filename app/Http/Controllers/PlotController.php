@@ -27,8 +27,26 @@ class PlotController extends Controller
         try {
             //code...
             $params=$request->query('id');
-            $plot=Plot::where('id',$params)->first(); 
+            $plot=Plot::where('id',$params)->first();
             $site = Site::find($request->site_id);
+            if($site)
+            {
+                $areas=$site->site_areas;
+
+                $areas = json_decode($areas, true);
+
+                // Check if plot_area is not already in the array
+                if (!in_array($request->plot_area, $areas)) {
+                    // Add plot_area to the array
+                    $areas[] = $request->plot_area;
+ 
+                    // return response()->json($areas);
+
+                    $site->update([
+                        'site_areas' => json_encode($areas) // Convert array back to JSON string
+                    ]);
+    }
+            }
             $validator=Validator::make($request->all(),[
                 'site_id' => $plot ? 'nullable|integer|exists:sites,id' : 'required|integer|exists:sites,id',
                 'plot_No' => [
@@ -72,6 +90,7 @@ class PlotController extends Controller
                     'Plot' => $plot
                 ], 201);
             }
+
             $newPlot=Plot::create($data);
             return response()->json([
                 'success'=>1, 
