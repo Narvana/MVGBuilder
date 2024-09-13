@@ -3,13 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\AgentRegister;
-use App\Models\AgentProfile;
 use App\Models\AgentLevels;
 use App\Http\Controllers\Controller;
-use App\Models\AgentIncome;
-use App\Models\Plot_Sale;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -18,7 +14,43 @@ use Illuminate\Support\Facades\DB;
 
 class AgentRegisterController extends Controller
 {
-    //
+
+     /**
+     * @group Agent Management
+     * 
+     * Register a new agent.
+     * Registers a new agent with the provided information and generates a referral code and Sends Agents detail via SMS to agent registered contact number .
+     * 
+     * @bodyParam fullname string required Full name of the agent.
+     * @bodyParam email string required Agent's email address. Must be unique.
+     * @bodyParam password string required Password. Must include at least one uppercase letter, one lowercase letter, and one number.
+     * @bodyParam pancard_no string required Pan card number (exactly 10 characters).
+     * @bodyParam contact_no string required Contact number (exactly 10 digits).
+     * @bodyParam code string required Referral code.
+     * 
+     * @response 201 {
+     *   "success": 1,
+     *   "data": {
+     *     "id": 154,
+     *     "fullname": "John Doe",
+     *     "email": "johndoe@example.com",
+     *     "referral_code": "L1MVG154",
+     *     "contact_no": "9876543210",
+     *     "pancard_no": "ABCDE1234F"
+     *   },
+     *   "level": {
+     *     "id": 1,
+     *     "parent_id": 24,
+     *     "agent_id": 154,
+     *     "level": 1,
+     *     "referral": "0"
+     *   },
+     *   "Sms Response": {
+     *     "return": true
+     *   }
+     * }
+     */
+
     public function registerAgent(Request $request){
     try {
 
@@ -116,7 +148,7 @@ class AgentRegisterController extends Controller
 
         DB::commit();
 
-            $url = "https://www.fast2sms.com/dev/bulkV2?authorization=JqKpX9IMLieFSUH7sThu5yOElafAPw1N4Cvmc02rgWtGxbnD8jm4zNCQqYpkF8lMaXSU9rWIEeBHDiLj&route=q&message=Welcome%20to%20%20MVG%20Builders,%20your%20details%20are:%0AReferal%20ID%20:%20{$agent->referral_code}%0APassword%20:%20{$request->password}&flash=0&numbers={$agent->contact_no}";
+            $url = "https://www.fast2sms.com/dev/bulkV2?authorization=JqKpX9IMLieFSUH7sThu5yOElafAPw1N4Cvmc02rgWtGxbnD8jm4zNCQqYpkF8lMaXSU9rWIEeBHDiLj&route=dlt&sender_id=MVG258&message=173302&variables_values={$agent->referral_code}%7C{$request->password}%7C&flash=0&numbers={$agent->contact_no}";
 
             $response = Http::get($url);
             
@@ -128,6 +160,29 @@ class AgentRegisterController extends Controller
             return response()->json(['success' => 0, 'error' => 'Internal Server Error. ' . $e->getMessage()], 500);
         }
     }
+
+    /**
+     * @group Agent Management
+     * 
+     * Login an agent.
+     * Logs in an agent using either email or referral code and password.
+     * 
+     * @bodyParam identifier string required Either the agent's email or referral code.
+     * @bodyParam password string required The password for the agent. Must include at least one uppercase letter, one lowercase letter, and one number.
+     * 
+     * @response 200 {
+     *   "success": 1,
+     *   "agent": {
+     *     "id": 154,
+     *     "fullname": "John Doe",
+     *     "email": "johndoe@example.com",
+     *     "referral_code": "L1MVG154"
+     *   },
+     *   "token": "1|dU4f...",
+     *   "expire": 1440
+     * }
+     */
+
 
     public function loginAgent(Request $request)
     {
@@ -198,6 +253,22 @@ class AgentRegisterController extends Controller
 
     }
 
+    /**
+     * @group Agent Management
+     * Forgot password.
+     * 
+     * Resets the agent's password and sends a new password via SMS.
+     * 
+     * @bodyParam identifier string required Either the agent's email or referral code.
+     * 
+     * @response 200 {
+     *   "success": 1,
+     *   "response": {
+     *     "message": "Password sent successfully."
+     *   }
+     * }
+     */
+
     public function forgotPassword(Request $request)
     {
         $validator=Validator::make(request()->all(),[
@@ -240,6 +311,27 @@ class AgentRegisterController extends Controller
         return response()->json(['success'=>0, 'response'=>$response->json()],500);
     }
 
+    /**
+     * @group Agent Management
+     * Agent profile.
+     * 
+     * Retrieves the logged-in agent's profile and their sponsor's information.
+     * 
+     * @authenticated
+     * 
+     * @response 200 {
+     *   "success": 1,
+     *   "agent": {
+     *     "id": 154,
+     *     "fullname": "John Doe",
+     *     "email": "johndoe@example.com",
+     *     "referral_code": "L1MVG154"
+     *   },
+     *   "sponser_name": "Jane Smith",
+     *   "sponser_referralCode": "L1MVG123"
+     * }
+     */
+
     public function profile(Request $request){
         $agent = Auth::guard('sanctum')->user();
 
@@ -260,6 +352,8 @@ class AgentRegisterController extends Controller
             'sponser_referralCode' => $agentParent->referral_code
         ], 200);
     }
+
+
 
     public function removeAgent(Request $request)
     {
@@ -289,6 +383,31 @@ class AgentRegisterController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Update the agent's profile.
+     *
+     * @group Agent Management
+     * 
+     * @authenticated
+     *
+     * @bodyParam fullname string optional The agent's full name.
+     * @bodyParam email string optional The agent's email address. Must be unique.
+     * @bodyParam pancard_no string optional The agent's PAN card number. Must be 10 characters and unique.
+     * @bodyParam contact_no string optional The agent's contact number. Must be 10 digits and unique.
+     * @bodyParam address string optional The agent's address.
+     * @bodyParam DOB date optional The agent's date of birth.
+     *
+     * @response 201 {
+     *   "success": 1,
+     *   "message": "Agent updated successfully",
+     *   "agent": {...}
+     * }
+     * @response 422 {
+     *   "success": 0,
+     *   "error": "The email has already been taken."
+     * }
+     */
 
     public function updateProfile(Request $request){
         $agent = Auth::guard('sanctum')->user();
@@ -325,6 +444,27 @@ class AgentRegisterController extends Controller
                 'agent' => $agent
             ], 201);
     }
+
+    /**
+     * Change agent's password.
+     *
+     * @group Agent Management
+   
+     * @authenticated
+     *
+     * @bodyParam oldPassword string required The agent's current password.
+     * @bodyParam newPassword string required The new password. Must be at least 8 characters with upper and lower case, and digits.
+     * @bodyParam verifyPassword string required Must match the new password.
+     *
+     * @response 201 {
+     *   "success": 1,
+     *   "message": "Password Updated"
+     * }
+     * @response 400 {
+     *   "success": 0,
+     *   "error": "New Password and Verify Password should match each other"
+     * }
+     */
 
     public function changePassword(Request $request)
     {
@@ -389,6 +529,7 @@ class AgentRegisterController extends Controller
         }
     }
 
+
     // All Level
       public function showLevel(Request $request)
     {
@@ -420,6 +561,25 @@ class AgentRegisterController extends Controller
             }        
             return $result;
     }
+
+    /**
+     * Show the map structure of the agent's downline.
+     *
+     * @group Agent Management
+  
+     * @authenticated
+     *
+     * @queryParam parent_id int optional The parent agent's ID.
+     *
+     * @response 200 {
+     *   "success": 1,
+     *   "Map": [...]
+     * }
+     * @response 404 {
+     *   "success": 0,
+     *   "error": "Data Not Found"
+     * }
+     */
 
     // Map
     public function showMap(Request $request)
@@ -469,6 +629,23 @@ class AgentRegisterController extends Controller
 
         // return response()->json(['success'=>1, 'Map'=>$level1Agents],200);   
     }
+
+    /**
+     * Show all agents in the system.
+     *
+     * @group Agent Management
+
+     * @authenticated
+     *
+     * @response 200 {
+     *   "success": 1,
+     *   "Agents": [...]
+     * }
+     * @response 404 {
+     *   "success": 0,
+     *   "error": "Data Not Found"
+     * }
+     */
 
     public function showAllAgents(Request $request)
     {
@@ -547,59 +724,93 @@ class AgentRegisterController extends Controller
         return response()->json(['success'=>1, 'Agents'=>$agent]);
     }
 
+    /**
+     * Show all the agents below the current logged-in agent in the downline.
+     *
+     * @group Agent Management
+     * @authenticated
+     *
+     * @response 200 {
+     *   "success": 1,
+     *   "downAgent": [...]
+     * }
+     * @response 404 {
+     *   "success": 0,
+     *   "error": "Data Not Found"
+     * }
+     */
+
     public function showAgentDown(Request $request)
     {
         // OLD CODE
-
-        $user=Auth::guard('sanctum')->user();
-        
-        $level1Agents = AgentLevels::where('referral', 'like', '%' . $user->referral_code . '%')
-        ->with('agent')
-        ->orderByRaw('CAST(level AS UNSIGNED) ASC')
-        ->get();
-          
-        if($level1Agents->isEmpty())
-        {
-            return response()->json(['success' => 0,'error' => 'Data Not Found'],404);
-        }
-        
-        foreach ($level1Agents as $agentLevel) {
-            $agentsHierarchy[] = [
-                'level'=>$agentLevel->level,
-                'agent' =>$agentLevel->agent
-            ];
-        }
-
-        return response()->json(['success'=>1,'downAgent'=> $agentsHierarchy]);
-
-        //  UPDATED CODE
         // $user=Auth::guard('sanctum')->user();
         
-        // $level1Agents=DB::table('agent_levels')
-        //               ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
-        //               ->select(
-        //                 "agent_levels.level",
-        //                 "agent_registers.id",
-        //                 "agent_registers.referral_code",
-        //                 "agent_registers.pancard_no",
-        //                 "agent_registers.contact_no",
-        //                 "agent_registers.fullname",
-        //                 "agent_registers.email",
-        //                 "agent_registers.designation",
-        //                 "agent_registers.address",
-        //                 "agent_registers.DOB",
-        //               )
-        //               ->where('referral', 'like', '%' . $user->referral_code . '%')
-        //               ->get();
+        // $level1Agents = AgentLevels::where('referral', 'like', '%' . $user->referral_code . '%')
+        // ->with('agent')
+        // ->orderByRaw('CAST(level AS UNSIGNED) ASC')
+        // ->get();
           
         // if($level1Agents->isEmpty())
         // {
         //     return response()->json(['success' => 0,'error' => 'Data Not Found'],404);
         // }
         
-        // return response()->json(['success'=>1,'downAgent'=> $level1Agents]);
+        // foreach ($level1Agents as $agentLevel) {
+        //     $agentsHierarchy[] = [
+        //         'level'=>$agentLevel->level,
+        //         'agent' =>$agentLevel->agent
+        //     ];
+        // }
+
+        // return response()->json(['success'=>1,'downAgent'=> $agentsHierarchy]);
+
+        //  UPDATED CODE
+        $user=Auth::guard('sanctum')->user();
+        
+        $level1Agents=DB::table('agent_levels')
+                      ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
+                      ->select(
+                        "agent_levels.level",
+                        "agent_registers.id",
+                        "agent_registers.referral_code",
+                        "agent_registers.pancard_no",
+                        "agent_registers.contact_no",
+                        "agent_registers.fullname",
+                        "agent_registers.email",
+                        "agent_registers.designation",
+                        "agent_registers.address",
+                        "agent_registers.DOB",
+                      )
+                      ->where('referral', 'like', '%' . $user->referral_code . '%')
+                      ->get();
+          
+        if($level1Agents->isEmpty())
+        {
+            return response()->json(['success' => 0,'error' => 'Data Not Found'],404);
+        }
+        
+        return response()->json(['success'=>1,'downAgent'=> $level1Agents]);
     }
 
+     /**
+     * Show Agent's income.
+     * Show the Logged-in Agent's Plot Sold Incentive  
+     *
+     * @group Agent Management
+     *
+     * @authenticated
+     *
+     * @queryParam agent_id int required The agent ID for which to show income details.
+     *
+     * @response 200 {
+     *   "success": 1,
+     *   "Incomes": [...]
+     * }
+     * @response 404 {
+     *   "success": 0,
+     *   "error": "Data don't Exist or Data Not Found"
+     * }
+     */
     public function agentIncome(Request $request)
     {
 
@@ -624,8 +835,27 @@ class AgentRegisterController extends Controller
             return response()->json(['success' => 0,'error' =>"Data don't Exist or Data Not Found"],404);
         }
 
-                return response()->json(['success'=>1,'Incomes'=>$income],200);
+            return response()->json(['success'=>1,'Incomes'=>$income],200);
     }
+
+    /**
+     * Show Agent's clients information.
+     *
+     * @group Agent Management
+     * 
+     * @authenticated
+     *
+     * @queryParam Provied site string optional The site name to filter the clients.
+     *
+     * @response 200 {
+     *   "success": 1,
+     *   "Client": [...]
+     * }
+     * @response 404 {
+     *   "success": 0,
+     *   "error": "Data don't Exist or Data not Found"
+     * }
+     */
 
     public function agentClientInfo(Request $request)
     {
@@ -662,4 +892,5 @@ class AgentRegisterController extends Controller
         }
         return response()->json(['success'=>1,'Client'=>$plot_sales],200);
     }
+
 }
