@@ -121,7 +121,7 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
     Route::get('/Admin/Client/Legder',[ClientControllerController::class,'ClientLedgerADMIN']);
 });
 
-
+Route::get('/Client/List',[ClientControllerController::class,'ClientLists']);
 
 Route::get('/show/Site',[SiteController::class,'showSite']);
 

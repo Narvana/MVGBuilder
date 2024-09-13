@@ -428,7 +428,28 @@ class ClientControllerController extends Controller
             'success'=>1,
             'data'=>$Client
         ],200);
-
     }
 
+    public function ClientLists(Request $request)
+    {
+        $Client = DB::table('client_controllers')
+                  ->select(
+                    'client_controllers.id', 
+                    'client_controllers.client_name'
+                  )->get(); 
+
+        if($Client->isEmpty())
+        {
+            return response()->json(
+            [
+                'success'=> 0,
+                'message'=> "No Client found"
+            ],200);   
+        }
+        return response()->json(
+        [
+            'success'=>1,
+            'data'=>$Client
+        ],200);
+    }
 }
