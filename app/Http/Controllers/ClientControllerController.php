@@ -8,8 +8,10 @@ use App\Models\AgentProfile;
 use App\Models\ClientController;
 use App\Models\Plot_Sale;
 use App\Models\Plot;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -340,13 +342,15 @@ class ClientControllerController extends Controller
             'client_controllers.client_name',
             'client_controllers.client_contact',
             'sites.site_name',
+            'plots.plot_No',
             'plots.plot_area',
-            'plot_sales.plot_value',
+            // 'plot_sales.plot_value',
+            'plot_sales.totalAmount',
             'plot_transactions.transaction_id',
             'plot_transactions.amount',
             DB::raw('DATE(plot_transactions.created_at) as transaction_date')
         )
-        ->where('plot_sales.plot_status', 'BOOKED')
+        ->where('plot_sales.plot_value', '>', '0')
         ->whereIn('sites.id',[$siteID]);
 
         if($id)
@@ -357,7 +361,7 @@ class ClientControllerController extends Controller
                 return response()->json(
                 [
                     'success'=>0,
-                    'message'=> "This client don't exist in this Site"
+                    'message'=> "No Ledger Found Regarding this Client"
                 ],200);   
             }
             return response()->json(
@@ -368,10 +372,64 @@ class ClientControllerController extends Controller
                 ],200);
         }
         $Client=$Ledger->get();
+        if($Client->isEmpty())
+        {
+            return response()->json(
+            [
+                'success'=>0,
+                'message'=> "No Ledger Found Regarding this Client"
+            ],200);   
+        }
         return response()->json(
             [
                 'success'=>1,
                 'data'=>$Client
             ],200);
     }
+
+    public function DailyTransactionClient(Request $request)
+    {   
+
+        $today = Carbon::today()->toDateString();  
+        // return response()->json($today);
+        
+        $date= $request->query('date');
+
+        $Client = DB::table('client_controllers')
+        ->leftJoin('plot_sales', 'client_controllers.id', '=', 'plot_sales.client_id')
+        ->leftJoin('plots', 'plot_sales.plot_id', '=', 'plots.id')
+        ->leftJoin('sites', 'plots.site_id', '=', 'sites.id')
+        ->leftJoin('plot_transactions', 'plot_sales.id', '=', 'plot_transactions.plot_sale_id')
+        ->select(
+            'client_controllers.id',
+            'client_controllers.client_name',
+            'client_controllers.client_contact',
+            'sites.site_name',
+            'plots.plot_No',
+            'plots.plot_area',
+            'plot_sales.plot_value',
+            'plot_transactions.transaction_id',
+            'plot_transactions.amount',
+            DB::raw('DATE(plot_transactions.created_at) as transaction_date')
+        )
+        ->where('plot_sales.plot_value', '>', '0')
+        ->whereDate('plot_transactions.created_at', $date? $date :$today)
+        ->get();
+        
+        if($Client->isEmpty())
+        {
+            return response()->json(
+            [
+                'success'=>0,
+                'message'=> "No Transaction Found Regarding this Client for this particular date"
+            ],200);   
+        }
+        return response()->json(
+        [
+            'success'=>1,
+            'data'=>$Client
+        ],200);
+
+    }
+
 }
