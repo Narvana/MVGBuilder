@@ -318,7 +318,6 @@ class ClientControllerController extends Controller
         }
     }
 
-
     public function ClientLedgerADMIN(Request $request)
     {
         $id= $request->query('id');
@@ -330,7 +329,7 @@ class ClientControllerController extends Controller
                 [
                     'success'=>0,
                     'message'=>'Please Select Site Name First'
-                ],200);
+                ],400);
         }
         $Ledger = DB::table('client_controllers')
         ->leftJoin('plot_sales', 'client_controllers.id', '=', 'plot_sales.client_id')
@@ -362,7 +361,7 @@ class ClientControllerController extends Controller
                 [
                     'success'=>0,
                     'message'=> "No Ledger Found Regarding this Client"
-                ],200);   
+                ],404);
             }
             return response()->json(
                 [
@@ -378,13 +377,13 @@ class ClientControllerController extends Controller
             [
                 'success'=>0,
                 'message'=> "No Ledger Found Regarding this Client"
-            ],200);   
+            ],404);   
         }
         return response()->json(
-            [
-                'success'=>1,
-                'data'=>$Client
-            ],200);
+        [
+            'success'=>1,
+            'data'=>$Client
+        ],200);
     }
 
     public function DailyTransactionClient(Request $request)
