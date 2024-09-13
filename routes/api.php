@@ -3,10 +3,11 @@
 use App\Http\Controllers\AdminRegisterController;
 use App\Http\Controllers\AgentIncomeController;
 use App\Http\Controllers\AgentRegisterController;
+use App\Http\Controllers\AgentRewardController;
 use App\Http\Controllers\ClientControllerController;
 use App\Http\Controllers\PlotController;
 use App\Http\Controllers\SiteController;
-
+use App\Models\AgentReward;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -71,6 +72,9 @@ Route::middleware(['auth:sanctum','role:agent'])->group(function () {
     Route::get('/Agent/DG/Sales',[PlotController::class,'AgentDGsale']);
 
     Route::get('/Client/Contact/Info',[ClientControllerController::class,'clientContactInfo']);
+
+    Route::get('/Agent/Reward',[AgentRewardController::class,'AgentReward']);
+    Route::get('/Get/Agent/Reward',[AgentRewardController::class,'GetAgentReward']);
 });
 
 Route::middleware(['auth:sanctum','role:admin'])->group(function () {
