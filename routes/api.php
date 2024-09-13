@@ -73,7 +73,8 @@ Route::middleware(['auth:sanctum','role:agent'])->group(function () {
 
     Route::get('/Client/Contact/Info',[ClientControllerController::class,'clientContactInfo']);
 
-    Route::get('/Agent/Reward',[AgentRewardController::class,'AgentReward']);
+    Route::post('/Agent/Reward',[AgentRewardController::class,'AgentReward']);
+ 
     Route::get('/Get/Agent/Reward',[AgentRewardController::class,'GetAgentReward']);
 });
 
