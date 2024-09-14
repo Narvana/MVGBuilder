@@ -421,7 +421,7 @@ class ClientControllerController extends Controller
             [
                 'success'=>0,
                 'message'=> "No Transaction Found Regarding this Client for this particular date"
-            ],200);   
+            ],404);   
         }
         return response()->json(
         [
@@ -444,7 +444,7 @@ class ClientControllerController extends Controller
             [
                 'success'=> 0,
                 'message'=> "No Client found"
-            ],200);   
+            ],404);   
         }
         return response()->json(
         [

@@ -668,21 +668,18 @@ class AgentIncomeController extends Controller
         ->whereDate('agent_incomes.updated_at', $date? $date :$today)
         ->get();
 
-    
         if($Agent->isEmpty())
         {
             return response()->json(
             [
                 'success'=>0,
                 'message'=> "No Transaction Found Regarding this Agent for this particular date"
-            ],200);   
+            ],404);  
         }
         return response()->json(
         [
             'success'=>1,
             'data'=>$Agent
         ],200);
-    
     }
-
 }
