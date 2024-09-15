@@ -26,6 +26,7 @@ class AgentRegister extends Model
         'password',
         'referral_code',
         'pancard_no',
+        'aadhaar_card',
         'contact_no',
         'address',
         'designation',
