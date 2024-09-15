@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Models\AgentProfile;
 use App\Models\ClientController;
+use App\Models\ClientInvoice;
 use App\Models\Plot_Sale;
 use App\Models\Plot;
 use Carbon\Carbon;
@@ -386,6 +387,104 @@ class ClientControllerController extends Controller
         ],200);
     }
 
+    public function ClientInvoiceADMIN(Request $request)
+    {
+        $id= $request->query('id');
+        if(!$id)
+        {
+            return response()->json( [
+                'success'=>0,
+                'message'=> "Please Select a Name of the Client"
+            ],404);
+        }
+
+        $ClientLegder = DB::table('client_controllers')
+        ->leftJoin('plot_sales', 'client_controllers.id', '=', 'plot_sales.client_id')
+        ->leftJoin('plots', 'plot_sales.plot_id', '=', 'plots.id')
+        ->leftJoin('sites', 'plots.site_id', '=', 'sites.id')
+        ->leftJoin('agent_registers','plot_sales.agent_id','=','agent_registers.id')
+        ->leftJoin('plot_transactions', 'plot_sales.id', '=', 'plot_transactions.plot_sale_id')
+        ->select(
+            'client_controllers.id',
+            'client_controllers.client_name',
+            'client_controllers.client_contact',
+            DB::raw('CONCAT(client_controllers.client_address, ", ", client_controllers.client_city, ", ", client_controllers.client_state) as Address'),
+            'sites.site_name',
+            'plots.plot_No',
+            'plots.plot_area',
+            'plot_transactions.transaction_id',
+            'plot_transactions.amount',
+            DB::raw('DATE(plot_transactions.created_at) as transaction_date'),
+            'agent_registers.fullname as Agent'
+        )
+        ->where('plot_sales.plot_value', '>', '0')
+        ->where('client_controllers.id',$id)
+        ->get();
+
+        if($ClientLegder->isEmpty())
+        {
+            return response()->json(
+            [
+                'success'=> 0,
+                'message'=> "No Ledger Found Regarding this Client"
+            ],404);   
+        }
+        return response()->json(
+        [
+            'success'=> 1,
+            'data'=>$ClientLegder
+        ],200);
+    }
+
+    public function CreateINVOICE(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'Client_name'=>'required|string',
+                'Client_contact'=>'required|string',
+                'Client_address'=>'required|string',
+                'Site_Name'=>'required|string',
+                'Plot_No'=>'required|string',
+                'Plot_Area'=>'required|string',
+                'Transaction_id'=>'required|string',
+                'Amount'=>'required|string',
+                'Transaction_date'=>'required|string',
+                'Agent_name'=>'required|string',
+                'Payment_Method'=>'required|string',
+                'Payment_Detail'=>'required|string'
+                ]);
+                
+                if ($validator->fails()) {
+                    $errors = $validator->errors()->all(); // Get all error messages
+                    $formattedErrors = [];
+            
+                    foreach ($errors as $error) {
+                        $formattedErrors[] = $error;
+                    }
+        
+                    return response()->json([
+                        'success' => 0,
+                        'error' => $formattedErrors[0]
+                    ], 422);
+                }
+                
+                $data = $validator->validated();   
+
+                $length=ClientInvoice::count();
+               
+                $data['Invoice_no'] = 'MVG' . $length + 1;
+                // $data['Transaction_id']="0";
+                $ClientInvoice=ClientInvoice::create($data);
+                return response()->json([
+                    'success'=> 1,
+                    'data'=>$ClientInvoice
+                ],200);        
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success'=>0, 'error' => 'Internal Server Error' . $th->getMessage()], 500);
+        }
+    }
+
     public function DailyTransactionClient(Request $request)
     {   
 
@@ -420,7 +519,7 @@ class ClientControllerController extends Controller
             return response()->json(
             [
                 'success'=>0,
-                'message'=> "No Transaction Found Regarding this Client for this particular date"
+                'message'=> "No Transaction Found Regarding Clients for this particular date"
             ],404);   
         }
         return response()->json(
