@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class AgentRegisterController extends Controller
 {
@@ -66,6 +67,7 @@ class AgentRegisterController extends Controller
                 'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,}$/',
             ],
             'pancard_no' => 'required|string|min:10|max:10|unique:agent_registers,pancard_no',
+            'aadhaar_card' => 'required|string|min:12|max:12|unique:agent_registers,aadhaar_card',
             'contact_no' => 'required|string|min:10|max:10|unique:agent_registers,contact_no',
             'code' => 'required|string',
         ]);
@@ -94,6 +96,7 @@ class AgentRegisterController extends Controller
             'password' => Hash::make($request->password),
             'referral_code' => 1,
             'contact_no' => $request->contact_no,
+            'aadhaar_card' => $request->aadhaar_card,
             'pancard_no' => $request->pancard_no,
         ]);
 
@@ -412,14 +415,29 @@ class AgentRegisterController extends Controller
     public function updateProfile(Request $request){
         $agent = Auth::guard('sanctum')->user();
 
+        // return response()->json($agent);
+        
         $validator=Validator::make($request->all(),[
             'fullname' => 'nullable|string',
             'email' => 'nullable|string|email|unique:agent_registers,email',
             'pancard_no' => 'nullable|string|min:10|max:10|unique:agent_registers,pancard_no',
             'contact_no' => 'nullable|string|min:10|max:10|unique:agent_registers,contact_no',
             'address'=>  'nullable|string',
-            'DOB' => 'nullable|date'
-        ]);
+            'DOB' => 'nullable|date',
+            'aadhaar_card' => [
+            'nullable', 
+            'string', 
+            'min:12', 
+            'max:12',
+            Rule::unique('agent_registers', 'aadhaar_card')->ignore($agent->id), // Ensure uniqueness
+            // Add a custom rule to allow updates only if the current value is 0
+            Rule::when($agent->aadhaar_card !== "0", function () {
+                return 'prohibited'; // Prohibit updating if aadhaar_card is not 0
+            })
+        ]
+    ], [
+        'aadhaar_card.prohibited' => 'You cannot update the Aadhaar card once it has been set.'
+    ]);
 
         if ($validator->fails()) {
             $errors = $validator->errors()->all(); // Get all error messages
