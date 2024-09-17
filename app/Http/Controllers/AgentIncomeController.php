@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\AgentDGSale;
 use App\Models\AgentIncome;
+use App\Models\AgentIncomeTransaction;
 use App\Models\Plot_Sale;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -154,8 +155,7 @@ class AgentIncomeController extends Controller
 
     /**
      * Get both CORPUS and DISTRIBUTED income for the agent.
-     * This API show the CORPUS and DISTRIBUTED status regarding the PLOT sold by either him or
-     * Agent in his group 
+     * This API show the CORPUS and DISTRIBUTED status regarding the PLOT sold by either him or Agent in his group 
      * 
      * @group Agent Income
      * @authenticated
@@ -198,8 +198,7 @@ class AgentIncomeController extends Controller
 
      /**
      * Get Agents Income (Admin view).
-     * This API Provide the Single Agent All Income Data if ID is provide else it 
-     * will give all Agents Income data  
+     * This API Provide the Single Agent All Income Data if ID is provide else it will give all Agents Income data 
      * 
      * 
      * @group Admin Income
@@ -520,49 +519,80 @@ class AgentIncomeController extends Controller
     public function UpdateAgentIncomeTransaction(Request $request)
     {
         try {
-            //code...
-            $params=$request->query('id');
-            
-            $agentTransaction=AgentIncome::where('id',$params)->first();
-
-            $PlotSale=Plot_Sale::where('id',$agentTransaction->plot_sale_id)->first();
-
-            // return response()->json($PlotSale);
-    
-            if(!$agentTransaction)
-            {
+            $params = $request->query('id');
+        
+            $agentTransaction = AgentIncome::where('id', $params)->first();
+            if (!$agentTransaction) {
                 return response()->json([
-                    'success'=>0,
+                    'success' => 0,
                     'message' => 'No Agent Transaction Found',
                 ], 404);
             }
-            
-            if ($PlotSale->plot_value >= 30 && $PlotSale->plot_value < 50) {
-                $transactionStatus = "PARTIALLY COMPLETED";
-            } else if ($PlotSale->plot_value >= 50) {
-                $transactionStatus = "COMPLETED";
-            } 
-            else if($PlotSale->plot_value < 30) {
-                $transactionStatus = "PENDING";
+        
+            $PlotSale = Plot_Sale::where('id', $agentTransaction->plot_sale_id)->first();
+            if (!$PlotSale) {
+                return response()->json([
+                    'success' => 0,
+                    'message' => 'No Plot Sale Found',
+                ], 404);
             }
         
-            // Update the transaction status
+            $validator = Validator::make($request->all(), [
+                'Payment_Mode' => 'required|string',
+            ]);
+        
+            if ($validator->fails()) {
+                $errors = $validator->errors()->first();
+                return response()->json([
+                    'success' => 0,
+                    'error' => $errors
+                ], 422);
+            }
+        
+            $transactionStatus = "PENDING";
+            $transactionAmount = 0;
+        
+            if ($PlotSale->plot_value >= 50 && $agentTransaction->transaction_status === "PENDING") {
+                $transactionStatus = "COMPLETED";
+                $transactionAmount = $agentTransaction->final_income;
+            }
+            else if ($PlotSale->plot_value >= 50 && $agentTransaction->transaction_status === "PARTIALLY COMPLETED") {
+                $transactionStatus = "COMPLETED";
+                $transactionAmount = $agentTransaction->final_income / 2;
+            } else if ($PlotSale->plot_value >= 30) {
+                $transactionStatus = "PARTIALLY COMPLETED";
+                $transactionAmount = $agentTransaction->final_income;
+            }
+        
+            if ($transactionStatus !== "PENDING") {
+                $AgentIncomeTransaction = AgentIncomeTransaction::create([
+                    'agent_id' => $agentTransaction->final_agent,
+                    'income_type' => $agentTransaction->income_type,
+                    'transaction_status' => $transactionStatus,
+                    'transaction_amount' => $transactionAmount,
+                    'plot_sale_id' => $agentTransaction->plot_sale_id,
+                    'Payment_Mode' => $request->Payment_Mode
+                ]);
+            }
+        
             $agentTransaction->transaction_status = $transactionStatus;
             $agentTransaction->save();
-    
+        
             return response()->json([
-                'success'=>1,
+                'success' => 1,
                 'message' => 'Transaction Status Updated',
-                'agent_transaction' => $agentTransaction 
-            ], 201);    
-
+                'agent_transaction' => $agentTransaction,
+            ], 201);
+        
         } catch (\Throwable $th) {
-            //throw $th;
+            // Log the exception for easier debugging
+            \Log::error('Error updating transaction status: ' . $th->getMessage());
+        
             return response()->json([
                 'success' => 0,
-                'error' => 'Internal Server Error. ' . $th->getMessage()
+                'error' => 'Internal Server Error: ' . $th->getMessage()
             ], 500);
-        }
+        }        
     }
 
 
@@ -639,33 +669,72 @@ class AgentIncomeController extends Controller
         return response()->json(['success'=>1,'totalSale'=>$total,'Sales'=>$sales],200);
     }
 
+    // public function DailyTransactionAgent(Request $request)
+    // {
+    //     $today = Carbon::today()->toDateString();
+        
+    //     $date= $request->query('date');
+
+    //     $Agent = DB::table('agent_incomes')
+    //     ->leftJoin('agent_registers','agent_incomes.final_agent','=','agent_registers.id')
+    //     ->leftJoin('plot_sales', 'agent_incomes.plot_sale_id', '=', 'plot_sales.id')
+    //     ->select(
+    //         'agent_incomes.final_agent',
+    //         'agent_registers.fullname',
+    //         'agent_registers.contact_no',
+    //         'agent_incomes.income_type',
+    //         'agent_incomes.transaction_status',
+    //         DB::raw("
+    //         ROUND(CASE
+    //             WHEN agent_incomes.transaction_status = 'PARTIALLY COMPLETED' THEN agent_incomes.final_income
+    //             WHEN agent_incomes.transaction_status = 'COMPLETED' THEN agent_incomes.final_income / 2
+    //         END) as transaction
+    //         "),
+    //         'agent_incomes.plot_sale_id',
+    //         'plot_sales.plot_value',
+    //         DB::raw('DATE(agent_incomes.updated_at) as transaction_date')
+    //     )
+    //     ->where('agent_incomes.transaction_status', '!=', 'PENDING')
+    //     ->where('agent_registers.id', "!=",'24')
+    //     ->whereDate('agent_incomes.updated_at', $date? $date :$today)
+    //     ->get();
+
+    //     if($Agent->isEmpty())
+    //     {
+    //         return response()->json(
+    //         [
+    //             'success'=>0,
+    //             'message'=> "No Transaction Found Regarding this Agent for this particular date"
+    //         ],404);  
+    //     }
+    //     return response()->json(
+    //     [
+    //         'success'=>1,
+    //         'data'=>$Agent
+    //     ],200);
+    // }
+
     public function DailyTransactionAgent(Request $request)
     {
-        $today = Carbon::today()->toDateString();
+        // $today = Carbon::today()->toDateString();
         
-        $date= $request->query('date');
+        // $date= $request->query('date');
 
-        $Agent = DB::table('agent_incomes')
-        ->leftJoin('agent_registers','agent_incomes.final_agent','=','agent_registers.id')
-        ->leftJoin('plot_sales', 'agent_incomes.plot_sale_id', '=', 'plot_sales.id')
+        $Agent = DB::table('agent_income_transactions')
+        ->leftJoin('agent_registers','agent_income_transactions.agent_id','=','agent_registers.id')
+        ->leftJoin('plot_sales', 'agent_income_transactions.plot_sale_id', '=', 'plot_sales.id')
+        ->leftJoin('plots', 'plot_sales.id', '=', 'plots.id')
         ->select(
-            'agent_incomes.final_agent',
+            'agent_income_transactions.agent_id',
             'agent_registers.fullname',
             'agent_registers.contact_no',
-            'agent_incomes.income_type',
-            'agent_incomes.transaction_status',
-            DB::raw("
-            ROUND(CASE
-                WHEN agent_incomes.transaction_status = 'PARTIALLY COMPLETED' THEN agent_incomes.final_income
-                WHEN agent_incomes.transaction_status = 'COMPLETED' THEN agent_incomes.final_income / 2
-            END) as transaction"),
-            'agent_incomes.plot_sale_id',
-            'plot_sales.plot_value',
-            DB::raw('DATE(agent_incomes.updated_at) as transaction_date')
+            'agent_income_transactions.income_type',
+            'agent_income_transactions.transaction_status',
+            'agent_income_transactions.plot_sale_id',
+            'plots.plot_No',
+            'agent_income_transactions.Payment_Mode',
+            DB::raw('DATE(agent_income_transactions.created_at) as transaction_date')
         )
-        ->where('agent_incomes.transaction_status', '!=', 'PENDING')
-        ->where('agent_registers.id', "!=",'24')
-        ->whereDate('agent_incomes.updated_at', $date? $date :$today)
         ->get();
 
         if($Agent->isEmpty())
@@ -673,7 +742,7 @@ class AgentIncomeController extends Controller
             return response()->json(
             [
                 'success'=>0,
-                'message'=> "No Transaction Found Regarding this Agent for this particular date"
+                'message'=> "No Transactions Found Regarding"
             ],404);  
         }
         return response()->json(
