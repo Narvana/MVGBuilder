@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Models\AgentProfile;
 use App\Models\ClientController;
+use App\Models\ClientEMIInfo;
 use App\Models\ClientInvoice;
 use App\Models\Plot_Sale;
 use App\Models\Plot;
@@ -551,5 +552,120 @@ class ClientControllerController extends Controller
             'success'=>1,
             'data'=>$Client
         ],200);
+    }
+
+    public function AddClientEMI(Request $request)
+    {
+        $id=$request->query('id');
+        if(!$id)
+        {
+            return response()->json(
+                [
+                    'success'=>0,
+                    'message'=>"Please select or provide the id to add client emi info"
+                ],400);
+        }
+        $ClientEMI=ClientEMIInfo::where('id',$id)->first();
+        if(!$ClientEMI)
+        {
+            return response()->json(
+                [
+                    'success'=>0,
+                    'message'=>"Not EMI Information found in this id"
+                ],400);
+        }
+
+        $validator=Validator::make($request->all(),[
+            'EMI_Amount' => ($ClientEMI->EMI_Amount == 0.00) ? 'required|numeric' : Null,
+            'EMI_Date' => ($ClientEMI->EMI_Date === Null) ? 'required|date' : 'nullable|date'
+        ]);
+
+        if ($validator->fails()) {
+            $errors = $validator->errors()->all(); 
+            $formattedErrors = [];
+            foreach ($errors as $error) {
+                $formattedErrors[] = $error;
+            }
+            return response()->json([
+                'success' => 0,
+                'error' => $formattedErrors[0]
+            ], 422);
+        }
+
+        $data=$validator->validated();
+
+        $ClientEMI->update($data);
+       
+        return response()->json(
+        [
+            'success'=>1,
+            'data'=>'EMI information added'
+        ],200);
+    }
+
+    public function UpdateEMIDate(Request $request)
+    {
+        $today = Carbon::today()->toDateString();  
+
+        $EMI = ClientEMIInfo::get();
+        
+        if($EMI->isEmpty())
+        {
+          return response()->json(
+            [
+                'success'=> 0,
+                'message'=> "No EMI information found"
+            ],404);   
+        }
+        foreach($EMI as $emi)
+        {
+            if($emi->EMI_Date === $today) {
+
+                $plot_sale=Plot_Sale::where('id',$EMI->plot_sale_id);
+
+                if($plot_sale->plot_value == 100.00 && $plot_sale->plot_status === 'COMPLETED')
+                {
+                    continue;                    
+                }
+
+                $newEMIDate = Carbon::parse($emi->EMI_Date)->addMonth();        
+                $emi->update([
+                    'EMI_Date' => $newEMIDate->toDateString(),
+                ]);
+            }
+        } 
+        return response()->json([
+            'success'=> 1,
+            'message'=> "EMI dates updated successfully"
+        ], 200);
+    }
+
+    public function GetClientEMI(Request $request)
+    {
+        $ClientEMI= DB::table('client_e_m_i_infos')
+        ->leftJoin('plot_sales','plot_sales.id','=','client_e_m_i_infos.plot_sale_id')
+        ->leftJoin('client_controllers','client_controllers.id','=','plot_sales.client_id')
+        ->leftJoin('plots','plots.id','=','plot_sales.plot_id')
+        ->select(
+            'client_controllers.client_name',
+            'client_controllers.client_contact',
+            'plots.plot_No',
+            'client_e_m_i_infos.EMI_amount',
+            'client_e_m_i_infos.EMI_Date'
+        )->get();
+
+        if($ClientEMI->isEmpty()){
+        return response()->json(
+            [
+                'success'=> 0,
+                'message'=> "No EMI information found"
+            ],404);   
+        }
+        return response()->json(
+        [
+            'success'=>1,
+            'data'=>$ClientEMI
+        ],200);
+
     }
 }
