@@ -8,6 +8,7 @@ use App\Models\AgentDGSale;
 use App\Models\AgentIncome;
 use App\Models\AgentLevels;
 use App\Models\AgentRegister;
+use App\Models\ClientEMIInfo;
 use App\Models\Plot;
 use App\Models\PlotTransaction;
 use App\Models\Plot_Sale;
@@ -25,6 +26,7 @@ class PlotController extends Controller
     public function addPlot(Request $request)
     {
         try {
+            DB::beginTransaction();
             //code...
             $params=$request->query('id');
             $plot=Plot::where('id',$params)->first();
@@ -35,24 +37,20 @@ class PlotController extends Controller
 
                 $areas = json_decode($areas, true);
 
-                // Check if plot_area is not already in the array
                 if (!in_array($request->plot_area, $areas)) {
-                    // Add plot_area to the array
-                    $areas[] = $request->plot_area;
- 
+                    $areas[] = $request->plot_area; 
                     // return response()->json($areas);
-
                     $site->update([
                         'site_areas' => json_encode($areas) // Convert array back to JSON string
                     ]);
-    }
+                }
             }
             $validator=Validator::make($request->all(),[
                 'site_id' => $plot ? 'nullable|integer|exists:sites,id' : 'required|integer|exists:sites,id',
                 'plot_No' => [
-                    $plot ? 'nullable' : 'required',   // Nullable if plot exists, required otherwise
-                    'string',                          // Ensure plot_No is a string
-                    Rule::unique('plots')->where(function ($query) use ($request) {
+                    $plot ? 'nullable' : 'required', 
+                    'string',        
+                    Rule::unique('plots','plot_No')->where(function ($query) use ($request) {
                         return $query->where('site_id', $request->site_id);
                     })
                 ],
@@ -60,23 +58,34 @@ class PlotController extends Controller
                 'plot_length' => 'nullable|numeric',
                 'plot_width'  => 'nullable|numeric',
                 'plot_area'   => $plot ? 'nullable|numeric' : 'required|numeric',
-            ],[
-                'plot_No.unique' => $site 
-                ? 'The plot number has already been taken for the site: ' . $site->site_name 
-                : "Error"
+                [
+                    'plot_No.unique' => $site 
+                    ? 'The plot number has already been taken for the site: ' . $site->site_name 
+                    : "Error"
+                ]
             ]);
     
             if ($validator->fails()) {
-                $errors = $validator->errors()->all(); // Get all error messages
-                $formattedErrors = [];
-        
-                foreach ($errors as $error) {
-                    $formattedErrors[] = $error;
-                }
-        
+                $errors = $validator->errors();                                
+                if(!$plot)
+                {
+                   if ($errors->has('plot_No.*')) {
+                      $plotNoErrors = [];
+                      foreach ($request->plot_No as $index => $plotNo) {
+                        if ($errors->has("plot_No.$index")) {
+                            $plotNoErrors[] = "The plot number $plotNo has already been taken for the site: " . ($site ? $site->site_name : 'this site');
+                        }
+                      }
+                        
+                       return response()->json([
+                        'success' => 0,
+                        'error' => implode(', ', $plotNoErrors),  // 
+                       ], 422);
+                    }    
+                }            
                 return response()->json([
                     'success' => 0,
-                    'error' => $formattedErrors[0]
+                    'error' => '$errors->first()',
                 ], 422);
             }   
 
@@ -89,16 +98,44 @@ class PlotController extends Controller
                     'message' => 'Plot updated successfully',
                     'Plot' => $plot
                 ], 201);
+                return response()->json([
+                    'success'=>1,
+                    'message' => 'Plot updated successfully',
+                    'Plot' => $plot
+                ], 201);
+            }
+            $count=0;
+            $plots=[];
+
+            foreach($data['plot_No'] as $PlotNo)
+            {
+                $newPlot = Plot::create([
+                 'site_id' => $request->site_id,
+                 'plot_No' => $PlotNo, // New plot number from the array
+                 'plot_type' => $request->plot_type,
+                 'plot_length' => $request->plot_length,
+                 'plot_width' => $request->plot_width,
+                 'plot_area' => $request->plot_area,   
+                ]);
+                $plots[]=$newPlot;
+                $count++;
             }
 
-            $newPlot=Plot::create($data);
+            // return response()->json([
+            //     'message' => "Total Plot {$count} Added successfully",
+            //     'plots' => $plots
+            // ], 201);
+
             return response()->json([
                 'success'=>1, 
-                'message' => 'Plot Added successfully',
-                'plot' => $newPlot
+                'message' => "Total Plot {$count} Added successfully",
+                'plots' => $plots
             ], 201);
+            
+            DB::commit();
         } catch (\Throwable $th) {
-            return response()->json(['success'=>0,'details' => 'Internal Server Error. ' . $th->getMessage()], 500);
+            DB::rollBack();
+            return response()->json(['success'=>0,'error' => 'Internal Server Error. ' . $th->getMessage()], 500);
         }
     }
 
@@ -327,6 +364,13 @@ class PlotController extends Controller
 
                 if($status === 'BOOKED' && $plot_sale->TDG_status === 0)
                 {
+                    if($plot_sale->buying_type === 'EMI')
+                    {
+                        ClientEMIInfo::create([
+                            'plot_sale_id'=>$data['plot_sale_id']
+                        ]);
+                    }
+
                     $agentDG = AgentDGSale::firstOrCreate(
                         ['agent_id' => $plot_sale->agent_id],
                         ['direct' => 0, 'group' => 0]
@@ -1095,6 +1139,8 @@ class PlotController extends Controller
         }        
     }
 
+
+
     public function showPlotSales(Request $request)
     {
         // $sales = DB::table('plot_sales')->get();
@@ -1205,9 +1251,7 @@ class PlotController extends Controller
             ],200);
     }
 
-
-
-
+    
 
 }
 
