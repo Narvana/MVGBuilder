@@ -487,6 +487,18 @@ class ClientControllerController extends Controller
         }
     }
 
+    public function GetInvoices(Request $request)
+    {
+        // $id=$request->query('id');
+
+            $invoices=ClientInvoice::get();
+
+        return response()->json([
+           'success'=> 1,
+           'data'=>$invoices
+        ],200);   
+    }
+
     public function DailyTransactionClient(Request $request)
     {   
 
