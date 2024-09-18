@@ -119,6 +119,22 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
     Route::get('/Agent/DG/Admin',[AgentIncomeController::class,'AdminAgentDGSale']);
     
     Route::get('/Admin/Client/Legder',[ClientControllerController::class,'ClientLedgerADMIN']);
+
+    Route::get('/Admin/Client/Invoice',[ClientControllerController::class,'ClientInvoiceADMIN']);
+    
+    Route::post('/Admin/Generate/Client/Invoice',[ClientControllerController::class,'CreateINVOICE']);
+
+    Route::post('/Add/Client/EMI/INFO',[ClientControllerController::class,'AddClientEMI']);
+    
+    Route::get('/Get/Client/EMI/INFO',[ClientControllerController::class,'GetClientEMI']);
+
+    Route::get('/Update/Client/EMI/INFO',[ClientControllerController::class,'UpdateEMIDate']);
+
+    Route::get('/Daily/Transactions/Client',[ClientControllerController::class,'DailyTransactionClient']);
+    
+    Route::get('/Daily/Transactions/Agent',[AgentIncomeController::class,'DailyTransactionAgent']);
+
+
 });
 
 Route::get('/Client/List',[ClientControllerController::class,'ClientLists']);
@@ -127,9 +143,7 @@ Route::get('/show/Site',[SiteController::class,'showSite']);
 
 Route::get('/show/Plot/Area',[SiteController::class,'showPlotArea']);
 
-Route::get('/Daily/Transactions/Client',[ClientControllerController::class,'DailyTransactionClient']);
 
-Route::get('/Daily/Transactions/Agent',[AgentIncomeController::class,'DailyTransactionAgent']);
 
 // Route::get('/show/Plot',[PlotController::class,'showPlot']);
 
