@@ -121,7 +121,9 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
     Route::get('/Admin/Client/Legder',[ClientControllerController::class,'ClientLedgerADMIN']);
 
     Route::get('/Admin/Client/Invoice',[ClientControllerController::class,'ClientInvoiceADMIN']);
-    
+
+    Route::get('/Admin/Generated/Client/Invoice',[ClientControllerController::class,'GetInvoices']);
+
     Route::post('/Admin/Generate/Client/Invoice',[ClientControllerController::class,'CreateINVOICE']);
 
     Route::post('/Add/Client/EMI/INFO',[ClientControllerController::class,'AddClientEMI']);
