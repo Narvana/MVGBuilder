@@ -25,123 +25,130 @@ class PlotController extends Controller
     // Add and updated plot
     public function addPlot(Request $request)
     {
+        
         try {
             DB::beginTransaction();
-            //code...
-            $params=$request->query('id');
-            $plot=Plot::where('id',$params)->first();
+            
+            $params = $request->query('id');
+            $plot = Plot::where('id', $params)->first();
             $site = Site::find($request->site_id);
-            if($site)
-            {
-                $areas=$site->site_areas;
 
-                $areas = json_decode($areas, true);
-
+            if ($site) {
+                $areas = json_decode($site->site_areas, true);
                 
-
                 if (!in_array($request->plot_area, $areas)) {
                     $areas[] = $request->plot_area; 
-
-                    // DB::commit();
-                    $site->update([
-                        'site_areas' => json_encode($areas)
-                    ]);
+                    $site->update(['site_areas' => json_encode($areas)]);
                 }
             }
-            $validator=Validator::make($request->all(),[
+
+            $validator = Validator::make($request->all(), [
                 'site_id' => $plot ? 'nullable|integer|exists:sites,id' : 'required|integer|exists:sites,id',
                 'plot_No' => [
-                    $plot ? 'nullable' : 'required', 
-                    'string',        
-                    Rule::unique('plots','plot_No')->where(function ($query) use ($request) {
-                        return $query->where('site_id', $request->site_id);
-                    })
+                    Rule::when($plot, [
+                        'nullable', 'string',
+                        function ($attribute, $value, $fail) use ($request,$params) {                             
+                            $exists = Plot::where('plot_No', $value)
+                                ->where('id', '!=', $params)
+                                ->exists();
+                            if ($exists) {
+                                // $siteName = Site::find($request->site_id)->site_name;
+                                return $fail("The plot number {$value} has already added");
+                            }
+                        }
+                    ]),
+                    Rule::when(!$plot, [
+                        'required', 'array', // Ensures no duplicate values in the array
+                        function ($attribute, $value, $fail) use ($request) {
+                          if (count($value) !== count(array_unique($value))) {
+                            return $fail('Duplicate plot numbers are not allowed in the same request.');
+                          }
+                           
+                          foreach ($value as $plotNo) {
+                              $exists = Plot::where('plot_No', $plotNo)
+                                  ->where('site_id', $request->site_id)
+                                  ->exists();
+                             if ($exists) {
+                                $siteName = Site::find($request->site_id)->site_name;
+                                return $fail("The plot number {$plotNo} has already been taken for the site: {$siteName}");
+                              }
+                            }
+                        }
+                    ]),
                 ],
-                'plot_type' =>  $plot ? 'nullable|string' : 'required|string',
+                'plot_type' => $plot ? 'nullable|string' : 'required|string',
                 'plot_length' => 'nullable|numeric',
                 'plot_width'  => 'nullable|numeric',
                 'plot_area'   => $plot ? 'nullable|numeric' : 'required|numeric',
-                [
-                    'plot_No.unique' => $site 
-                    ? 'The plot number has already been taken for the site: ' . $site->site_name 
-                    : "Error"
-                ]
             ]);
-    
+            
             if ($validator->fails()) {
-                if(!$plot)
-                {
-                    $errors = $validator->errors();  
-                   if ($errors->has('plot_No.*')) {
-                      $plotNoErrors = [];
-                      foreach ($request->plot_No as $index => $plotNo) {
-                        if ($errors->has("plot_No.$index")) {
-                            $plotNoErrors[] = "The plot number $plotNo has already been taken for the site: " . ($site ? $site->site_name : 'this site');
+                $errors = $validator->errors();
+                if (!$plot) {
+                    if ($errors->has('plot_No.*')) {
+                        $plotNoErrors = [];
+                        foreach ($request->plot_No as $index => $plotNo) {
+                            if ($errors->has("plot_No.$index")) {
+                                $plotNoErrors[] = "The plot number {$plotNo} has already been taken for the site: " . ($site ? $site->site_name : 'this site');
+                            }
                         }
-                      }
-                        
-                       return response()->json([
-                        'success' => 0,
-                        'error' => implode(', ', $plotNoErrors),  // 
-                       ], 422);
-                    }    
-                }else {
-                    $errors = $validator->errors()->all(); // Get all error messages
-                    $formattedErrors = [];
-                    foreach ($errors as $error) {
-                        $formattedErrors[] = $error;
+                        return response()->json([
+                            'success' => 0,
+                            'error' => implode(', ', $plotNoErrors),
+                        ], 422);
                     }
-                    return response()->json([
-                        'success' => 0,
-                        'error' => $formattedErrors[0]
-                    ], 422);
-                }           
-            }   
-
-            $data=$validator->validated();           
-
-            if($plot){
-                $plot->update($data);
-                
-                DB::commit();
-
+                }
+                $formattedErrors = [];
+                foreach ($errors->all() as $error) {
+                    $formattedErrors[] = $error;
+                }
+            
                 return response()->json([
-                   'success'=>1,
-                   'message' => 'Plot updated successfully',
-                   'Plot' => $plot
-                ], 201);
+                    'success' => 0,
+                    'error' => $formattedErrors[0] // Return the first error
+                ], 422);
             }
-
-            $count=0;
-            $plots=[];
-
-            foreach($data['plot_No'] as $PlotNo)
-            {
-                $newPlot = Plot::create([
-                 'site_id' => $request->site_id,
-                 'plot_No' => $PlotNo, // New plot number from the array
-                 'plot_type' => $request->plot_type,
-                 'plot_length' => $request->plot_length,
-                 'plot_width' => $request->plot_width,
-                 'plot_area' => $request->plot_area,   
-                ]);
-                $plots[]=$newPlot;
-                $count++;
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'success'=>1, 
-                'message' => "Total Plot {$count} Added successfully",
-                'plots' => $plots
-            ], 201);
             
 
+            $data = $validator->validated();           
+        
+            if ($plot) {
+                $plot->update($data);
+                DB::commit();
+        
+                return response()->json([
+                    'success' => 1,
+                    'message' => 'Plot updated successfully',
+                    'Plot' => $plot
+                ], 200);
+            }
+        
+            $plots = [];
+            foreach ($data['plot_No'] as $PlotNo) {
+                $newPlot = Plot::create([
+                    'site_id' => $request->site_id,
+                    'plot_No' => $PlotNo,
+                    'plot_type' => $request->plot_type,
+                    'plot_length' => $request->plot_length,
+                    'plot_width' => $request->plot_width,
+                    'plot_area' => $request->plot_area,
+                ]);
+                $plots[] = $newPlot;
+            }
+        
+            DB::commit();
+        
+            return response()->json([
+                'success' => 1, 
+                'message' => "Total Plot " . count($plots) . " added successfully",
+                'plots' => $plots
+            ], 201);
+        
         } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json(['success'=>0,'error' => 'Internal Server Error. ' . $th->getMessage()], 500);
+            return response()->json(['success' => 0, 'error' => 'Internal Server Error. ' . $th->getMessage()], 500);
         }
+        
     }
 
     public function showPlot(Request $request)
