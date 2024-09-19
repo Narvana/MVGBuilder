@@ -130,7 +130,7 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
     
     Route::get('/Get/Client/EMI/INFO',[ClientControllerController::class,'GetClientEMI']);
 
-    Route::get('/Update/Client/EMI/INFO',[ClientControllerController::class,'UpdateEMIDate']);
+    Route::put('/Update/Client/EMI/INFO',[ClientControllerController::class,'UpdateEMIDate']);
 
     Route::get('/Daily/Transactions/Client',[ClientControllerController::class,'DailyTransactionClient']);
     
