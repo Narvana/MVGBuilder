@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class ClientControllerController extends Controller
 {
@@ -568,51 +569,120 @@ class ClientControllerController extends Controller
 
     public function AddClientEMI(Request $request)
     {
-        $id=$request->query('id');
-        if(!$id)
-        {
-            return response()->json(
-                [
-                    'success'=>0,
-                    'message'=>"Please select or provide the id to add client emi info"
-                ],400);
-        }
-        $ClientEMI=ClientEMIInfo::where('id',$id)->first();
-        if(!$ClientEMI)
-        {
-            return response()->json(
-                [
-                    'success'=>0,
-                    'message'=>"Not EMI Information found in this id"
-                ],400);
-        }
-
-        $validator=Validator::make($request->all(),[
-            'EMI_Amount' => ($ClientEMI->EMI_Amount == 0.00) ? 'required|numeric' : Null,
-            'EMI_Date' => ($ClientEMI->EMI_Date === Null) ? 'required|date' : 'nullable|date'
-        ]);
-
-        if ($validator->fails()) {
-            $errors = $validator->errors()->all(); 
-            $formattedErrors = [];
-            foreach ($errors as $error) {
-                $formattedErrors[] = $error;
+        try {
+            $id = $request->query('id');
+            if (!$id) {
+                return response()->json([
+                    'success' => 0,
+                    'message' => "Please select or provide the id to add client EMI info"
+                ], 400);
             }
+            
+            $ClientEMI = ClientEMIInfo::where('id', $id)->first();
+            if (!$ClientEMI) {
+                return response()->json([
+                    'success' => 0,
+                    'message' => "No EMI Information found for this id"
+                ], 400);
+            }
+            
+            $validator = Validator::make($request->all(), [
+                'EMI_Amount' => [
+                    'required',
+                    'numeric',
+                    Rule::when($ClientEMI->EMI_Amount !== 0.00, ['prohibited']),
+                ],
+                'EMI_Date' => [
+                    'required',
+                    'date',
+                    Rule::when($ClientEMI->EMI_Date !== null, ['prohibited']),
+                ],
+            ], [
+                'EMI_Amount.prohibited' => 'You cannot update the EMI Amount once it has been set.',
+                'EMI_Date.prohibited' => 'You cannot update the EMI Date once it has been set.'
+            ]);
+            
+            if ($validator->fails()) {
+                $errors = $validator->errors()->all();
+                return response()->json([
+                    'success' => 0,
+                    'error' => $errors[0]
+                ], 422);
+            }
+            
+            $data = $validator->validated();
+            $ClientEMI->update($data);
+            
             return response()->json([
-                'success' => 0,
-                'error' => $formattedErrors[0]
-            ], 422);
+                'success' => 1,
+                'message' => 'EMI information updated successfully'
+            ], 200);
+            
+        } catch (\Throwable $th) {
+            return response()->json(['success'=>0, 'error' => $th->getMessage()], 500);
         }
 
-        $data=$validator->validated();
+        // $id=$request->query('id');
+        // if(!$id)
+        // {
+        //     return response()->json(
+        //         [
+        //             'success'=>0,
+        //             'message'=>"Please select or provide the id to add client emi info"
+        //         ],400);
+        // }
+        // $ClientEMI=ClientEMIInfo::where('id',$id)->first();
+        // if(!$ClientEMI)
+        // {
+        //     return response()->json(
+        //         [
+        //             'success'=>0,
+        //             'message'=>"Not EMI Information found in this id"
+        //         ],400);
+        // }
 
-        $ClientEMI->update($data);
+        // $validator=Validator::make($request->all(),[
+        //     'EMI_Amount' => [
+        //         // ($ClientEMI->EMI_Amount == 0.00) ? 'required|numeric' : Null,
+        //         'required',
+        //         'numeric',
+        //         Rule::when($ClientEMI->EMI_Amount !== 0.00,function(){
+        //             return 'prohibited';
+        //         })
+        //     ],'EMI_Date' =>[
+        //         'required',
+        //         'numeric',
+        //         Rule::when($ClientEMI->EMI_Date !== Null,function(){
+        //             return 'prohibited';
+        //         })
+        //     ]
+        // ], [
+        //       'EMI_Amount.prohibited' => 'You cannot update the EMI Amount once it has been set.'
+        // ],[
+        //       'EMI_Date.prohibited' => 'You cannot update the EMI Date card once it has been set.'
+        // ]);
+
+        // if ($validator->fails()) {
+        //     $errors = $validator->errors()->all(); 
+        //     $formattedErrors = [];
+        //     foreach ($errors as $error) {
+        //         $formattedErrors[] = $error;
+        //     }
+        //     return response()->json([
+        //         'success' => 0,
+        //         'error' => $formattedErrors[0]
+        //     ], 422);
+        // }
+
+        // $data=$validator->validated();
+
+        // $ClientEMI->update($data);
        
-        return response()->json(
-        [
-            'success'=>1,
-            'data'=>'EMI information added'
-        ],200);
+        // return response()->json(
+        // [
+        //     'success'=>1,
+        //     'data'=>'EMI information added'
+        // ],200);
     }
 
     public function UpdateEMIDate(Request $request)
