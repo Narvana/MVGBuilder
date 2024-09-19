@@ -20,6 +20,34 @@ class AgentRewardController extends Controller
     // Reward_Achieved
     // Received
     // Next_Reward
+    public function showAgentDown(Request $request)
+    {
+        //  UPDATED CODE
+        $user=Auth::guard('sanctum')->user();
+        
+        $level1Agents=DB::table('agent_levels')
+                      ->leftJoin('agent_registers','agent_levels.agent_id','=','agent_registers.id')
+                      ->select(
+                        "agent_levels.level",
+                        "agent_registers.id",
+                        "agent_registers.referral_code",
+                        "agent_registers.pancard_no",
+                        "agent_registers.contact_no",
+                        "agent_registers.fullname",
+                        "agent_registers.email",
+                        "agent_registers.designation",
+                        "agent_registers.address",
+                        "agent_registers.DOB",
+                      )
+                      ->where('referral', 'like', '%' . $user->referral_code . '%')
+                      ->get();
+        if($level1Agents->isEmpty())
+        {
+            return response()->json(['success' => 0,'error' => 'Data Not Found'],404);
+        }
+        
+        return response()->json(['success'=>1,'downAgent'=> $level1Agents]);
+    }
 
     public function AgentReward(Request $request)
     {
