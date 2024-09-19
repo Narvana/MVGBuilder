@@ -741,6 +741,7 @@ class ClientControllerController extends Controller
         ->leftJoin('client_controllers','client_controllers.id','=','plot_sales.client_id')
         ->leftJoin('plots','plots.id','=','plot_sales.plot_id')
         ->select(
+            'client_e_m_i_infos.id',
             'client_controllers.client_name',
             'client_controllers.client_contact',
             'plots.plot_No',
