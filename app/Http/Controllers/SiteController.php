@@ -42,7 +42,6 @@ class SiteController extends Controller
                 $data['site_areas'] = json_encode($data['site_areas']);
             }
 
-
             if ($site) {
                 // Update the site
                 $site->update($data);
@@ -96,14 +95,37 @@ class SiteController extends Controller
 
     public function showPlotArea(Request $request)
     {
-        $areas=Site::pluck('site_areas');
-        // return response()->json(['success'=>1,'areas'=>$area],200);
-        $uniqueAreas = $areas->flatMap(function ($siteAreas) {
-            // Decode JSON string to array
-            return json_decode($siteAreas, true);
-        })->unique()->sort()->values();
-    
-        // Return the result in JSON format
+        
+        $id=$request->query('id');
+        
+        if($id)
+        {
+            $site=Site::where('id',$id)->first();
+            // return response()->json(json_decode($site->site_areas), 400);
+            if(!$site)
+            {
+                return response()->json([
+                    'success' => 0,
+                    'message' => "No Site With the provided ID"
+                ], 400);
+            }
+            $SiteAreas=json_decode($site->site_areas);
+            if(empty($SiteAreas)){
+                return response()->json([
+                    'success' => 0,
+                    'message' => "No Plot Area found in Site $site->site_name"
+                ], 400);
+            }
+            $uniqueAreas= collect($SiteAreas)->sort()->values();;
+        }
+        else
+        {
+            $areas=Site::pluck('site_areas');
+            $uniqueAreas = $areas->flatMap(function ($siteAreas) {
+                return json_decode($siteAreas, true);
+            })->unique()->sort()->values();    
+        }
+
         return response()->json([
             'success' => 1,
             'areas' => $uniqueAreas
