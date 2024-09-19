@@ -590,7 +590,7 @@ class ClientControllerController extends Controller
                 'EMI_Amount' => [
                     'required',
                     'numeric',
-                    Rule::when($ClientEMI->EMI_Amount !== 0.00, ['prohibited']),
+                    Rule::when($ClientEMI->EMI_Amount !== "0.00", ['prohibited']),
                 ],
                 'EMI_Date' => [
                     'required',
