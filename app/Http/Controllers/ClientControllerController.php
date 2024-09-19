@@ -699,26 +699,38 @@ class ClientControllerController extends Controller
                 'message'=> "No EMI information found"
             ],404);   
         }
+
+        $count=0;
+
         foreach($EMI as $emi)
         {
-            if($emi->EMI_Date === $today) {
+            $plot_sale=Plot_Sale::where('id',$emi->plot_sale_id)->first();
 
-                $plot_sale=Plot_Sale::where('id',$EMI->plot_sale_id);
-
-                if($plot_sale->plot_value == 100.00 && $plot_sale->plot_status === 'COMPLETED')
-                {
-                    continue;                    
+            if($plot_sale->plot_value == 100.00 && $plot_sale->plot_status === 'COMPLETED')
+            {
+                continue;                    
+            }
+            else{
+                if($emi->EMI_Date <= $today) {
+                    $newEMIDate = Carbon::parse($emi->EMI_Date)->addMonth();        
+                    $emi->update([
+                        'EMI_Date' => $newEMIDate->toDateString(),
+                    ]);
+                    $count++;
                 }
-
-                $newEMIDate = Carbon::parse($emi->EMI_Date)->addMonth();        
-                $emi->update([
-                    'EMI_Date' => $newEMIDate->toDateString(),
-                ]);
             }
         } 
+
+        if($count === 0)
+        {
+            return response()->json([
+                'success'=> 0,
+                'message'=> "No EMI dates updated Today $today"
+            ], 400);        
+        }
         return response()->json([
             'success'=> 1,
-            'message'=> "EMI dates updated successfully"
+            'message'=> "Total $count EMI dates updated successfully"
         ], 200);
     }
 
