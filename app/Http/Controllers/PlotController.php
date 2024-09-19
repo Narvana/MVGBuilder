@@ -37,11 +37,14 @@ class PlotController extends Controller
 
                 $areas = json_decode($areas, true);
 
+                
+
                 if (!in_array($request->plot_area, $areas)) {
                     $areas[] = $request->plot_area; 
-                    // return response()->json($areas);
+
+                    // DB::commit();
                     $site->update([
-                        'site_areas' => json_encode($areas) // Convert array back to JSON string
+                        'site_areas' => json_encode($areas)
                     ]);
                 }
             }
@@ -66,9 +69,9 @@ class PlotController extends Controller
             ]);
     
             if ($validator->fails()) {
-                $errors = $validator->errors();                                
                 if(!$plot)
                 {
+                    $errors = $validator->errors();  
                    if ($errors->has('plot_No.*')) {
                       $plotNoErrors = [];
                       foreach ($request->plot_No as $index => $plotNo) {
@@ -82,28 +85,33 @@ class PlotController extends Controller
                         'error' => implode(', ', $plotNoErrors),  // 
                        ], 422);
                     }    
-                }            
-                return response()->json([
-                    'success' => 0,
-                    'error' => '$errors->first()',
-                ], 422);
+                }else {
+                    $errors = $validator->errors()->all(); // Get all error messages
+                    $formattedErrors = [];
+                    foreach ($errors as $error) {
+                        $formattedErrors[] = $error;
+                    }
+                    return response()->json([
+                        'success' => 0,
+                        'error' => $formattedErrors[0]
+                    ], 422);
+                }           
             }   
 
             $data=$validator->validated();           
 
             if($plot){
                 $plot->update($data);
+                
+                DB::commit();
+
                 return response()->json([
-                    'success'=>1,
-                    'message' => 'Plot updated successfully',
-                    'Plot' => $plot
-                ], 201);
-                return response()->json([
-                    'success'=>1,
-                    'message' => 'Plot updated successfully',
-                    'Plot' => $plot
+                   'success'=>1,
+                   'message' => 'Plot updated successfully',
+                   'Plot' => $plot
                 ], 201);
             }
+
             $count=0;
             $plots=[];
 
@@ -121,10 +129,7 @@ class PlotController extends Controller
                 $count++;
             }
 
-            // return response()->json([
-            //     'message' => "Total Plot {$count} Added successfully",
-            //     'plots' => $plots
-            // ], 201);
+            DB::commit();
 
             return response()->json([
                 'success'=>1, 
@@ -132,7 +137,7 @@ class PlotController extends Controller
                 'plots' => $plots
             ], 201);
             
-            DB::commit();
+
         } catch (\Throwable $th) {
             DB::rollBack();
             return response()->json(['success'=>0,'error' => 'Internal Server Error. ' . $th->getMessage()], 500);
