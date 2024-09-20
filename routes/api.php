@@ -104,7 +104,9 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
 
     Route::get('/show/Plot/Sales/admin',[PlotController::class,'showPlotSales']);
 
-    Route::delete('remove/Agent',[AgentRegisterController::class,'removeAgent']);
+    Route::delete('/remove/Agent',[AgentRegisterController::class,'removeAgent']);
+
+    Route::put('/CONVERT/Agent/Admin',[AdminRegisterController::class,'CONVERTAgentAdmin']);
 
     Route::get('/show/Agents/admin',[AgentRegisterController::class,'showAllAgents']);
 
