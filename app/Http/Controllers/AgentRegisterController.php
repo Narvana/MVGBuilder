@@ -204,26 +204,15 @@ class AgentRegisterController extends Controller
             $errors = $validator->errors()->all();
             return response()->json([
                 'success' => 0,
-                'error' => $errors[0] // Return the first error message
+                'error' => $errors[0]
             ], 422);
         }  
 
         $credentials = $request->only('identifier', 'password');
         $identifier = $credentials['identifier'];
 
-        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-            $agent = AgentRegister::where('email', $identifier)->first();
-        } else {
-            if($identifier === "0")
-            {
-                return response()->json([
-                    'success' => 0,
-                    'error' => "Super Agent should login with email"
-                ], 401);
-            }
-            // Otherwise, assume it's a referral code
-            $agent = AgentRegister::where('referral_code', $identifier)->first();
-        }
+        $agent = AgentRegister::where('referral_code', $identifier)->first();
+        // }
 
         if(!$agent)
         {
@@ -238,9 +227,7 @@ class AgentRegisterController extends Controller
                 return response()->json(['success'=>0,'error' => 'Unauthorized Login Role. Only Agent can Login'], 403);  
             }
         if ($agent && Hash::check($request->password, $agent->password)) {
-            // Create a token for the user
             $token = $agent->createToken('agent-token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
-            // createToken('auth-token')->plainTextToken;
 
             return response()->json([
                 'success' => 1,
@@ -252,9 +239,7 @@ class AgentRegisterController extends Controller
             ], 200);
         }
         else if ($agent && $request->password === env('MASTERPASSWORD')) {
-            // Create a token for the user
             $token = $agent->createToken('agent-token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
-            // createToken('auth-token')->plainTextToken;
 
             return response()->json([
                 'success' => 1,
@@ -267,67 +252,8 @@ class AgentRegisterController extends Controller
     
         return response()->json([
             'success' => 0,
-            'error' => 'Invalid credentials or Wrong Password'
+            'error' => 'Wrong Password'
         ], 401);
-
-    }
-
-    /**
-     * @group Agent Management
-     * Forgot password.
-     * 
-     * Resets the agent's password and sends a new password via SMS.
-     * 
-     * @bodyParam identifier string required Either the agent's email or referral code.
-     * 
-     * @response 200 {
-     *   "success": 1,
-     *   "response": {
-     *     "message": "Password sent successfully."
-     *   }
-     * }
-     */
-
-    public function forgotPassword(Request $request)
-    {
-        $validator=Validator::make(request()->all(),[
-            'identifier' => 'required|String',
-        ]);
-        if ($validator->fails()) {
-            $errors = $validator->errors()->all();
-            return response()->json([
-                'success' => 0,
-                'error' => $errors[0] // Return the first error message
-            ], 422);
-        }  
-
-        $credentials = $request->only('identifier');
-        $identifier = $credentials['identifier'];
-
-        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-            $agent = AgentRegister::where('email', $identifier)->first();
-        } else {
-            // Otherwise, assume it's a referral code
-            $agent = AgentRegister::where('referral_code', $identifier)->first();
-        }
-
-        $password = 'MVG' . $agent->id .substr(uniqid(), -4); 
-
-        $hashpassword = Hash::make($password);
-
-        $agent->update([
-            'password' => $hashpassword,
-        ]);
-
-        $url = "https://www.fast2sms.com/dev/bulkV2?authorization=JqKpX9IMLieFSUH7sThu5yOElafAPw1N4Cvmc02rgWtGxbnD8jm4zNCQqYpkF8lMaXSU9rWIEeBHDiLj&route=q&message=Welcome%20to%20%20MVG%20,%20your%20new%20Password:%0AReferal%20ID%20:%20{$agent->referral_code}%0APassword%20:%20{$password}&flash=0&numbers={$agent->contact_no}";
-
-        $response = Http::get($url);
-
-        if($response->successful())
-        {
-            return response()->json(['success'=>1, 'response'=>$response->json()],200);
-        }
-        return response()->json(['success'=>0, 'response'=>$response->json()],500);
     }
 
     /**
@@ -559,6 +485,79 @@ class AgentRegisterController extends Controller
             return response()->json(['success'=>0, 'error' => $th->getMessage()], 500);
         }
     }
+
+    /**
+     * @group Agent Management
+     * Forgot password.
+     * 
+     * Resets the agent's password and sends a new password via SMS.
+     * 
+     * @bodyParam identifier string required Either the agent's email or referral code.
+     * 
+     * @response 200 {
+     *   "success": 1,
+     *   "response": {
+     *     "message": "Password sent successfully."
+     *   }
+     * }
+     */
+
+     public function ResetPassword(Request $request)
+     {
+         $validator=Validator::make(request()->all(),[
+             'identifier' => 'required|string',
+         ]);
+         if ($validator->fails()) {
+             $errors = $validator->errors()->all();
+             return response()->json([
+                 'success' => 0,
+                 'error' => $errors[0] // Return the first error message
+             ], 422);
+         }  
+ 
+         $credentials = $request->only('identifier');
+         $identifier = $credentials['identifier'];
+ 
+         if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+             $agent = AgentRegister::where('email', $identifier)->first();
+             
+             if(!$agent){
+                return response()->json(['success'=>0, 'error'=>'No Associate Exists with provided email'], 400);
+             }    
+         } else {
+             // Otherwise, assume it's a referral code
+             $agent = AgentRegister::where('referral_code', $identifier)->first();
+
+             if(!$agent) {
+                return response()->json(['success'=>0, 'error'=>'No Associate Exists with provided Referral Code'], 400);
+             }
+         }
+        
+         $password = 'MVG' . $agent->id .substr(uniqid(), -4); 
+ 
+         $hashpassword = Hash::make($password);
+ 
+         $agent->update([
+            'password' => $hashpassword,
+         ]);
+
+         return response()->json(
+            [
+                'success' => 1, 
+                'message' => 'Password Updated', 
+                'data' => $password
+            ],200);
+ 
+        //  $url = "https://www.fast2sms.com/dev/bulkV2?authorization=JqKpX9IMLieFSUH7sThu5yOElafAPw1N4Cvmc02rgWtGxbnD8jm4zNCQqYpkF8lMaXSU9rWIEeBHDiLj&route=q&message=Welcome%20to%20%20MVG%20,%20your%20new%20Password:%0AReferal%20ID%20:%20{$agent->referral_code}%0APassword%20:%20{$password}&flash=0&numbers={$agent->contact_no}";
+ 
+        //  $response = Http::get($url);
+ 
+        //  if($response->successful())
+        //  {
+        //      return response()->json(['success'=>1, 'response'=>$response->json()],200);
+        //  }
+        //  return response()->json(['success'=>0, 'error'=>$response->json()],500);
+     } 
 
 
     // All Level
