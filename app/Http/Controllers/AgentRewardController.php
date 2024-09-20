@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 
 use App\Http\Controllers\Controller;
+use App\Models\AgentBonanza;
 use App\Models\AgentDGSale;
 use App\Models\AgentReward;
 use Illuminate\Http\Request;
@@ -177,11 +178,11 @@ class AgentRewardController extends Controller
                 $Reward_Achieved = 'FARMHOUSEAUDI';
                 $Reward_Received = 0;
                 $Next_Reward = 'NIL';
-                $Area_Sold=$group_area;
+                $Area_Sold= $group_area;
             }
             else if($DG_Data->direct <= 2 || $user_area->Total <= 100 )
             {
-                return response()->json(['success' => 0,'message' => "AGENT $user->fullname Reward Plan in Not Active Please Achieve the required quota first"],200); 
+                return response()->json(['success' => 0,'message' => "AGENT $user->fullname Reward Plan in Not Active Please Achieve the required quota first"],400); 
                 // $Reward_Achieved = 'NIL';
                 // $Reward_Received = 0;
                 // $Next_Reward = '';
@@ -224,6 +225,100 @@ class AgentRewardController extends Controller
         {
             return response()->json(['success' => 1,'message' => "AGENT $user->fullname Reward ",'data'=>$AgentReward],200);   
         }
-        return response()->json(['success' => 0,'message' => "AGENT {$user->fullname} has no Agent Rewards"],400);   
+        return response()->json(['success' => 0,'message' => "No Agent Rewards"],400);   
+    }
+
+    public function AgentBonanza(Request $request)
+    {
+        $user = Auth::guard('sanctum')->user();
+     
+        $user_area = DB::table('agent_registers')
+        ->leftJoin('plot_sales','agent_registers.id','=','plot_sales.agent_id')
+        ->leftJoin('plots','plot_sales.plot_id','=','plots.id')
+        ->select(
+            DB::raw('SUM(plots.plot_area) as Total')
+        )
+        ->whereIn('plot_sales.plot_status', ['BOOKED', 'COMPLETED']) 
+        ->where('agent_registers.id',$user->id)
+        ->first();
+                 
+            if($user_area->Total < 300 && $user_area->Total >= 100)
+            {
+                $Bonanza_Place = 'JIM CORBEET';
+                $Bonanza_Received = 0;
+                $Bonanza_Days = '2 Days 1 Night';
+                $Area_Sold = (int) $user_area->Total;
+            }
+            else if( $user_area->Total < 500 && $user_area->Total >= 300)
+            {
+                $Bonanza_Place = 'Kashmir Tour';
+                $Bonanza_Received = 0;
+                $Bonanza_Days = '2 Days 1 Night';
+                $Area_Sold = (int) $user_area->Total;
+            }
+            else if($user_area->Total < 1000 && $user_area->Total >= 500)
+            {
+                $Bonanza_Place = 'GOA Tour';
+                $Bonanza_Received = 0;
+                $Bonanza_Days = '2 Days 1 Night';
+                $Area_Sold = (int) $user_area->Total;
+            }
+            else if($user_area->Total < 2000 && $user_area->Total >= 1000)
+            {
+                $Bonanza_Place = 'Thailand Tour';
+                $Bonanza_Received = 0;
+                $Bonanza_Days = '3 Days 2 Night';
+                $Area_Sold = (int) $user_area->Total;
+            }
+            else if($user_area->Total < 4000 && $user_area->Total >= 2000)
+            {
+                $Bonanza_Place = 'Malaysia Tour';
+                $Bonanza_Received = 0;
+                $Bonanza_Days = '3 Days 2 Night';
+                $Area_Sold = (int) $user_area->Total;
+            }
+            else if($user_area->Total >= 4000)
+            {
+                $Bonanza_Place = 'Dubai Tour';
+                $Bonanza_Received = 0;
+                $Bonanza_Days = '3 Days 2 Night';
+                $Area_Sold = (int) $user_area->Total;
+            }
+            else if($user_area->Total < 100)
+            {
+                return response()->json(['success' => 0,'message' => "No Bonanza Reward"],400);
+            }
+            
+            $reward=AgentBonanza::where('agent_id',$user->id)->first();
+            if($reward)
+            {
+                $reward->update([
+                    'agent_id' => $user->id,
+                    'Bonanza_Place'=>$Bonanza_Place ,
+                    'Bonanza_Received'=>$Bonanza_Received,
+                    'Bonanza_Days'=>$Bonanza_Days,
+                    'Area_Sold' => $Area_Sold
+                ]);
+                return response()->json(['success' => 1,'message' => "AGENT $user->fullname Bonanza Reward Updated",'data'=>$reward],200);
+            }
+            $Reward=AgentBonanza::create([
+                'agent_id' => $user->id,
+                'Bonanza_Place'=>$Bonanza_Place ,
+                'Bonanza_Received'=>$Bonanza_Received,
+                'Bonanza_Days'=>$Bonanza_Days,
+                'Area_Sold' => $Area_Sold
+            ]);
+            return response()->json(['success' => 1,'message' => "AGENT $user->fullname Bonanza Reward Created",'data'=>$Reward],200);
+    }
+
+    public function GetAgentBonanza(Request $request)
+    {
+        $user = Auth::guard('sanctum')->user(); 
+        $AgentBonanza = AgentBonanza::where('agent_id',$user->id)->first();
+        if($AgentBonanza)
+        {
+            return response()->json(['success' => 1,'message' => "AGENT $user->fullname Bonanza Reward ",'data'=>$AgentBonanza],200);   
+        }
+        return response()->json(['success' => 0,'message' => "No Agent Bonanza Rewards"],400);   
     }
 }
