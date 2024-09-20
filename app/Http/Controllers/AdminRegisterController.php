@@ -298,7 +298,7 @@ class AdminRegisterController extends Controller
 
         $validator = Validator::make($request->all(), [
             'fullname' => 'required|string',
-            'pancard' => [
+            'pancard_no' => [
                 Rule::requiredIf($request->fullname !== 'MVG'), 
                 'string', 
                 'min:10', 
@@ -347,7 +347,7 @@ class AdminRegisterController extends Controller
         if ($data['fullname'] === 'MVG') {
             $data = [
                 'fullname' => 'MVG',
-                'pancard' => $request->input('pancard', '1000000001'),
+                'pancard_no' => $request->input('pancard_no', '1000000001'),
                 'aadhaar_card' => $request->input('aadhaar_card', 'MVG AADHAAR '),
                 'contact_no' => $request->input('contact_no', 'MVGCONTACT'),
                 'email' => $request->input('email', 'MVG@gmail.com'),
