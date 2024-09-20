@@ -76,6 +76,10 @@ Route::middleware(['auth:sanctum','role:agent'])->group(function () {
     Route::post('/Agent/Reward',[AgentRewardController::class,'AgentReward']);
  
     Route::get('/Get/Agent/Reward',[AgentRewardController::class,'GetAgentReward']);
+
+
+    Route::post('/Check/Agent/Bonanza',[AgentRewardController::class,'AgentBonanza']);    
+    Route::get('/Get/Agent/Bonanza',[AgentRewardController::class,'GetAgentBonanza']);
 });
 
 Route::middleware(['auth:sanctum','role:admin'])->group(function () {
@@ -158,6 +162,6 @@ Route::get('/show/Plot/Area',[SiteController::class,'showPlotArea']);
 // Route::get('/show/Agents',[AgentRegisterController::class,'showAllAgents']);
 
 // Forgot Password
-Route::post('/forgot/Password/agent', [AgentRegisterController::class, 'forgotPassword']);
+Route::put('/Reset/Password/Agent', [AgentRegisterController::class, 'ResetPassword']);
 
 Route::get('/hello', [ClientControllerController::class, 'Hello']);
