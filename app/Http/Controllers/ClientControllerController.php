@@ -586,6 +586,17 @@ class ClientControllerController extends Controller
                 ], 400);
             }
             
+
+            // $ClientAmount= DB::table('client_e_m_i_infos')
+            // ->leftJoin('plot_sales','plot_sales.id','=','client_e_m_i_infos.plot_sale_id')
+            // ->select(
+            //     'plot_sales.plot_value',
+            //     'plot_sales.totalAmount'
+            // )->first();
+
+            // $Client=;
+
+
             $validator = Validator::make($request->all(), [
                 'EMI_Amount' => [
                     'required',
@@ -621,68 +632,6 @@ class ClientControllerController extends Controller
         } catch (\Throwable $th) {
             return response()->json(['success'=>0, 'error' => $th->getMessage()], 500);
         }
-
-        // $id=$request->query('id');
-        // if(!$id)
-        // {
-        //     return response()->json(
-        //         [
-        //             'success'=>0,
-        //             'message'=>"Please select or provide the id to add client emi info"
-        //         ],400);
-        // }
-        // $ClientEMI=ClientEMIInfo::where('id',$id)->first();
-        // if(!$ClientEMI)
-        // {
-        //     return response()->json(
-        //         [
-        //             'success'=>0,
-        //             'message'=>"Not EMI Information found in this id"
-        //         ],400);
-        // }
-
-        // $validator=Validator::make($request->all(),[
-        //     'EMI_Amount' => [
-        //         // ($ClientEMI->EMI_Amount == 0.00) ? 'required|numeric' : Null,
-        //         'required',
-        //         'numeric',
-        //         Rule::when($ClientEMI->EMI_Amount !== 0.00,function(){
-        //             return 'prohibited';
-        //         })
-        //     ],'EMI_Date' =>[
-        //         'required',
-        //         'numeric',
-        //         Rule::when($ClientEMI->EMI_Date !== Null,function(){
-        //             return 'prohibited';
-        //         })
-        //     ]
-        // ], [
-        //       'EMI_Amount.prohibited' => 'You cannot update the EMI Amount once it has been set.'
-        // ],[
-        //       'EMI_Date.prohibited' => 'You cannot update the EMI Date card once it has been set.'
-        // ]);
-
-        // if ($validator->fails()) {
-        //     $errors = $validator->errors()->all(); 
-        //     $formattedErrors = [];
-        //     foreach ($errors as $error) {
-        //         $formattedErrors[] = $error;
-        //     }
-        //     return response()->json([
-        //         'success' => 0,
-        //         'error' => $formattedErrors[0]
-        //     ], 422);
-        // }
-
-        // $data=$validator->validated();
-
-        // $ClientEMI->update($data);
-       
-        // return response()->json(
-        // [
-        //     'success'=>1,
-        //     'data'=>'EMI information added'
-        // ],200);
     }
 
     public function UpdateEMIDate(Request $request)
@@ -736,6 +685,9 @@ class ClientControllerController extends Controller
 
     public function GetClientEMI(Request $request)
     {
+
+        $date = $request->query('date');
+
         $ClientEMI= DB::table('client_e_m_i_infos')
         ->leftJoin('plot_sales','plot_sales.id','=','client_e_m_i_infos.plot_sale_id')
         ->leftJoin('client_controllers','client_controllers.id','=','plot_sales.client_id')
@@ -747,20 +699,61 @@ class ClientControllerController extends Controller
             'plots.plot_No',
             'client_e_m_i_infos.EMI_amount',
             'client_e_m_i_infos.EMI_Date'
-        )->get();
-
-        if($ClientEMI->isEmpty()){
-        return response()->json(
-            [
-                'success'=> 0,
-                'message'=> "No EMI information found"
-            ],404);   
+        );
+         
+        if($date)
+        {
+            $data=$ClientEMI->where('client_e_m_i_infos.EMI_Date',$date)->get();
+            if($data->isEmpty())
+            {
+                return response()->json(
+                    [
+                        'success' => 0,
+                        'message' => "No EMI found"
+                    ],404);
+            }
+            return response()->json(
+                [
+                    'success' => 1,
+                    'data' => $data
+                ],200);
         }
-        return response()->json(
-        [
-            'success'=>1,
-            'data'=>$ClientEMI
-        ],200);
-
+        else
+        {
+            $Clientdata= $ClientEMI->get();
+            if($Clientdata->isEmpty()){
+            return response()->json(
+                [
+                    'success'=> 0,
+                    'message'=> "No EMI Generated"
+                ],404);
+            }
+            return response()->json(
+            [
+                'success'=>1,
+                'data' => $Clientdata
+            ],200);
+        }
+    
+        // if($search)
+        // {
+        //    $data = $ClientEMI->where('client_controllers.client_name', 'like', "%{$search}%")
+        // ->orWhere('client_controllers.client_contact', 'like', "%{$search}%")
+        // ->orWhere('plots.plot_No', 'like', "%{$search}%")
+        // ->get();
+        //     if(!$data)
+        //     {
+        //         return response()->json(
+        //             [
+        //                 'success' => 0,
+        //                 'message' => "No EMI found on date {$date}"
+        //             ],404);
+        //     }
+        //     return response()->json(
+        //     [
+        //         'success'=>1,
+        //         'data'=>$data
+        //     ],200);
+        // }
     }
 }
