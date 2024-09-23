@@ -101,62 +101,18 @@ class AgentRewardController extends Controller
                 $group_area=array_sum($underlink_areas);
             }
 
-                 
-            if($DG_Data->direct >= 2 && $user_area->Total > 100)
+            if($DG_Data->direct >= 4 &&  $DG_Data->group >= 6400 && $group_area >= 320200)
             {
-                $Reward_Achieved = 'MOBILE';
+                $Reward_Achieved = 'FARMHOUSEAUDI';
                 $Reward_Received = 0;
-                $Next_Reward = 'HPCHROME';
-                $Area_Sold = (int) $user_area->Total;
-                // return response()->json($Area_Sold);
+                $Next_Reward = 'NIL';
+                $Area_Sold= $group_area;
             }
-            else if($DG_Data->direct >= 6 && $user_area->Total >= 300)
+            else if($DG_Data->direct >= 4 &&  $DG_Data->group >= 3200 && $group_area >= 160200)
             {
-                $Reward_Achieved = 'HPCHROME';
+                $Reward_Achieved = 'FORTUNER';
                 $Reward_Received = 0;
-                $Next_Reward = 'SONYLED';
-                $Area_Sold=$user_area->Total;
-            }
-            else if($DG_Data->direct >= 8 && $user_area->Total > 400)
-            {
-                $Reward_Achieved = 'SONYLED';
-                $Reward_Received = 0;
-                $Next_Reward = 'SCOOTY';
-                $Area_Sold=$user_area->Total;
-            }
-            else if($DG_Data->direct >= 2 &&  $DG_Data->group >= 25 && $group_area >= 1350)
-            {
-                $Reward_Achieved = 'SCOOTY';
-                $Reward_Received = 0;
-                $Next_Reward = 'PULSAR';
-                $Area_Sold=$group_area;
-            }
-            else if($DG_Data->direct >= 2 &&  $DG_Data->group >= 50 && $group_area >= 2600)
-            {
-                $Reward_Achieved = 'SCOOTY';
-                $Reward_Received = 0;
-                $Next_Reward = 'HARLEY';
-                $Area_Sold=$group_area;
-            }
-            else if($DG_Data->direct >= 2 &&  $DG_Data->group >= 200 && $group_area >= 10100)
-            {
-                $Reward_Achieved = 'HARLEY';
-                $Reward_Received = 0;
-                $Next_Reward = 'WAGONR';
-                $Area_Sold=$group_area;
-            }
-            else if($DG_Data->direct >= 2 &&  $DG_Data->group >= 400 && $group_area >= 20100)
-            {
-                $Reward_Achieved = 'WAGONR';
-                $Reward_Received = 0;
-                $Next_Reward = 'ERTIGA';
-                $Area_Sold=$group_area;
-            }
-            else if($DG_Data->direct >= 2 &&  $DG_Data->group >= 800 && $group_area >= 40100)
-            {
-                $Reward_Achieved = 'ERTIGA';
-                $Reward_Received = 0;
-                $Next_Reward = 'SCORPIO';
+                $Next_Reward = 'FARMHOUSEAUDI';
                 $Area_Sold=$group_area;
             }
             else if($DG_Data->direct >= 2 &&  $DG_Data->group >= 1600 && $group_area >= 80100)
@@ -166,19 +122,62 @@ class AgentRewardController extends Controller
                 $Next_Reward = 'FORTUNER';
                 $Area_Sold=$group_area;
             }
-            else if($DG_Data->direct >= 4 &&  $DG_Data->group >= 3200 && $group_area >= 160200)
+            else if($DG_Data->direct >= 2 &&  $DG_Data->group >= 800 && $group_area >= 40100)
             {
-                $Reward_Achieved = 'FORTUNER';
+                $Reward_Achieved = 'ERTIGA';
                 $Reward_Received = 0;
-                $Next_Reward = 'FARMHOUSEAUDI';
+                $Next_Reward = 'SCORPIO';
                 $Area_Sold=$group_area;
             }
-            else if($DG_Data->direct >= 4 &&  $DG_Data->group >= 6400 && $group_area >= 320200)
+            else if($DG_Data->direct >= 2 &&  $DG_Data->group >= 400 && $group_area >= 20100)
             {
-                $Reward_Achieved = 'FARMHOUSEAUDI';
+                $Reward_Achieved = 'WAGONR';
                 $Reward_Received = 0;
-                $Next_Reward = 'NIL';
-                $Area_Sold= $group_area;
+                $Next_Reward = 'ERTIGA';
+                $Area_Sold=$group_area;
+            }
+            else if($DG_Data->direct >= 2 &&  $DG_Data->group >= 200 && $group_area >= 10100)
+            {
+                $Reward_Achieved = 'HARLEY';
+                $Reward_Received = 0;
+                $Next_Reward = 'WAGONR';
+                $Area_Sold=$group_area;
+            }
+            else if($DG_Data->direct >= 2 &&  $DG_Data->group >= 50 && $group_area >= 2600)
+            {
+                $Reward_Achieved = 'SCOOTY';
+                $Reward_Received = 0;
+                $Next_Reward = 'HARLEY';
+                $Area_Sold=$group_area;
+            }
+            else if($DG_Data->direct >= 2 &&  $DG_Data->group >= 25 && $group_area >= 1350)
+            {
+                $Reward_Achieved = 'SCOOTY';
+                $Reward_Received = 0;
+                $Next_Reward = 'PULSAR';
+                $Area_Sold=$group_area;
+            }
+            else if($DG_Data->direct >= 8 && $user_area->Total >= 400)
+            {
+                $Reward_Achieved = 'SONYLED';
+                $Reward_Received = 0;
+                $Next_Reward = 'SCOOTY';
+                $Area_Sold=$user_area->Total;
+            }
+            else if($DG_Data->direct >= 6 && $user_area->Total >= 300 && $user_area->Total < 400 )
+            {
+                $Reward_Achieved = 'HPCHROME';
+                $Reward_Received = 0;
+                $Next_Reward = 'SONYLED';
+                $Area_Sold=$user_area->Total;
+            }
+            else if($DG_Data->direct >= 2 && $user_area->Total > 100 && $user_area->Total < 300)
+            {
+                $Reward_Achieved = 'MOBILE';
+                $Reward_Received = 0;
+                $Next_Reward = 'HPCHROME';
+                $Area_Sold = (int) $user_area->Total;
+                // return response()->json($Area_Sold);
             }
             else if($DG_Data->direct <= 2 || $user_area->Total <= 100 )
             {
