@@ -13,5 +13,6 @@ class ClientEMIInfo extends Model
         'plot_sale_id',
         'EMI_Amount',
         'EMI_Date',
+        'EMI_Start_at',
     ];
 }
