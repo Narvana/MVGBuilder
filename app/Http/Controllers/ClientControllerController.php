@@ -586,17 +586,6 @@ class ClientControllerController extends Controller
                 ], 400);
             }
             
-
-            // $ClientAmount= DB::table('client_e_m_i_infos')
-            // ->leftJoin('plot_sales','plot_sales.id','=','client_e_m_i_infos.plot_sale_id')
-            // ->select(
-            //     'plot_sales.plot_value',
-            //     'plot_sales.totalAmount'
-            // )->first();
-
-            // $Client=;
-
-
             $validator = Validator::make($request->all(), [
                 'EMI_Amount' => [
                     'required',
@@ -688,6 +677,7 @@ class ClientControllerController extends Controller
 
         $date = $request->query('date');
 
+
         $ClientEMI= DB::table('client_e_m_i_infos')
         ->leftJoin('plot_sales','plot_sales.id','=','client_e_m_i_infos.plot_sale_id')
         ->leftJoin('client_controllers','client_controllers.id','=','plot_sales.client_id')
@@ -698,7 +688,8 @@ class ClientControllerController extends Controller
             'client_controllers.client_contact',
             'plots.plot_No',
             'client_e_m_i_infos.EMI_amount',
-            'client_e_m_i_infos.EMI_Date'
+            'client_e_m_i_infos.EMI_Date',
+            DB::raw('ROUND((plot_sales.totalAmount * ((100 - client_e_m_i_infos.EMI_Start_at)/100))/client_e_m_i_infos.EMI_amount) as Months')
         );
          
         if($date)
