@@ -380,7 +380,7 @@ class PlotController extends Controller
                     {
                         ClientEMIInfo::create([
                             'plot_sale_id'=>$data['plot_sale_id'],
-                            'EMI_Start_at'=>$data[''],
+                            'EMI_Start_at'=>$percentagePaid,
                         ]);
                     }
 
