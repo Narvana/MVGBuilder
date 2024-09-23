@@ -364,7 +364,7 @@ class PlotController extends Controller
                           
                 $plot_sale->update([
                     'plot_status' => $status,
-                    'plot_value' => $percentagePaid
+                    'plot_value' => $percentagePaid,
                 ]);
             
                 $plot->update([
@@ -379,7 +379,8 @@ class PlotController extends Controller
                     if($plot_sale->buying_type === 'EMI')
                     {
                         ClientEMIInfo::create([
-                            'plot_sale_id'=>$data['plot_sale_id']
+                            'plot_sale_id'=>$data['plot_sale_id'],
+                            'EMI_Start_at'=>$data[''],
                         ]);
                     }
 
@@ -1255,7 +1256,7 @@ class PlotController extends Controller
                     "tds_deduction" => $dgsale->tds_deduction,
                     "final_incentive" => $dgsale->final_incentive,
                     "salary" => $dgsale->salary === 0 ? null : $dgsale->salary,
-                    "transactionStatus" => $dgsale->TransactionStatus === 0 ? 'PENDING' : 'COMPLETED' ,
+                    "transactionStatus" => $dgsale->transactionStatus,
                     "directUp"=> $directUp ,          
                     "groupUp" => $groupUp ,          
                     "promotion" =>  $promotion,
