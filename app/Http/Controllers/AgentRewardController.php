@@ -193,7 +193,7 @@ class AgentRewardController extends Controller
             if($reward)
             {
                 $reward->update([
-                    'Agent_id' => $user->id,
+                    'agent_id' => $user->id,
                     'Direct' => $DG_Data->direct,
                     'Group' => $DG_Data->group,
                     'Reward_Achieved' => $Reward_Achieved,
@@ -204,7 +204,7 @@ class AgentRewardController extends Controller
                 return response()->json(['success' => 1,'message' => "AGENT $user->fullname Reward Updated",'data'=>$reward],200);
             }
             $Reward=AgentReward::create([
-                'Agent_id' => $user->id,
+                'agent_id' => $user->id,
                 'Direct' => $DG_Data->direct,
                 'Group' => $DG_Data->group,
                 'Reward_Achieved' => $Reward_Achieved,
