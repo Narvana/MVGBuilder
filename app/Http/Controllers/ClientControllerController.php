@@ -649,7 +649,11 @@ class ClientControllerController extends Controller
                 continue;                    
             }
             else{
-                if($emi->EMI_Date <= $today) {
+                if($emi->EMI_Date == null)
+                {
+                    continue;   
+                }
+                else if($emi->EMI_Date != null &&  $emi->EMI_Date <= $today) {
                     $newEMIDate = Carbon::parse($emi->EMI_Date)->addMonth();        
                     $emi->update([
                         'EMI_Date' => $newEMIDate->toDateString(),
