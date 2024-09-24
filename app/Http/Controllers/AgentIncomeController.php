@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\AgentDGSale;
+use App\Models\AgentDGTransaction;
 use App\Models\AgentIncome;
 use App\Models\AgentIncomeTransaction;
 use App\Models\Plot_Sale;
@@ -453,37 +454,104 @@ class AgentIncomeController extends Controller
     public function UpdateAgentDGTransaction(Request $request)
     {
         try {
-            //code...
-            $params=$request->query('id');
-            $agentTransaction=AgentDGSale::where('id',$params)->first();
-    
-            if(!$agentTransaction)
-            {
+
+            DB::beginTransaction();            
+
+            $params = $request->query('id');
+
+            $agentDG = AgentDGSale::where('agent_id', $params)->first();
+
+            if (!$agentDG) {
                 return response()->json([
-                    'success'=>0,
-                    'message' => 'No Agent Transaction Found',
+                    'success' => 0,
+                    'message' => 'No Agent DG Sale Found',
                 ], 404);
             }
 
+            if($agentDG->transactionStatus === 'COMPLETED')
+            {
+                return response()->json([
+                    'success' => 0,
+                    'message' => "Incentive Transaction for Designation {$agentDG->designation} is completed",
+                ], 400);   
+            }
+        
+            $validator = Validator::make($request->all(), [
+                'Payment_Mode' => 'required|string',
+            ]);
+        
+            if ($validator->fails()) {
+                $errors = $validator->errors()->first();
+                return response()->json([
+                    'success' => 0,
+                    'error' => $errors
+                ], 422);
+            }
+ 
+            AgentDGTransaction::create([
+                'agent_id' => $agentDG->agent_id,
+                'designation' => $agentDG->designation,
+                'transaction_amount' => $agentDG->final_incentive,
+                'Payment_Mode' => $request->Payment_Mode
+            ]);
+            
             $Status = "COMPLETED";
 
-            $agentTransaction->transactionStatus=$Status;
+            $agentDG->transactionStatus=$Status;
 
-            $agentTransaction->save();
-  
+            $agentDG->save();
+
+            DB::commit();
+
             return response()->json([
-                'success'=>1,
-                'message' => 'Transaction Status updated',
-                'agent_transaction' => $agentTransaction
-            ], 201);    
+                'success' => 1,
+                'message' => "Agent DG Transaction created and updated"
+            ], 200);
 
         } catch (\Throwable $th) {
-            //throw $th;
-            return response()->json([
+            // Log the exception for easier debugging
+            // \Log::error('Error updating transaction status: ' . $th->getMessage());
+
+             DB::rollBack();
+    
+             return response()->json([
                 'success' => 0,
-                'error' => 'Internal Server Error. ' . $th->getMessage()
+                'error' => 'Internal Server Error: ' . $th->getMessage()
             ], 500);
-        }
+        }        
+
+        // try {
+        //     //code...
+        //     $params=$request->query('id');
+        //     $agentTransaction=AgentDGSale::where('id',$params)->first();
+    
+        //     if(!$agentTransaction)
+        //     {
+        //         return response()->json([
+        //             'success'=>0,
+        //             'message' => 'No Agent Transaction Found',
+        //         ], 404);
+        //     }
+
+        //     $Status = "COMPLETED";
+
+        //     $agentTransaction->transactionStatus=$Status;
+
+        //     $agentTransaction->save();
+  
+        //     return response()->json([
+        //         'success'=>1,
+        //         'message' => 'Transaction Status updated',
+        //         'agent_transaction' => $agentTransaction
+        //     ], 201);    
+
+        // } catch (\Throwable $th) {
+        //     //throw $th;
+        //     return response()->json([
+        //         'success' => 0,
+        //         'error' => 'Internal Server Error. ' . $th->getMessage()
+        //     ], 500);
+        // }
     }
 
     /**
@@ -586,7 +654,7 @@ class AgentIncomeController extends Controller
         
         } catch (\Throwable $th) {
             // Log the exception for easier debugging
-            \Log::error('Error updating transaction status: ' . $th->getMessage());
+            // \Log::error('Error updating transaction status: ' . $th->getMessage());
         
             return response()->json([
                 'success' => 0,
