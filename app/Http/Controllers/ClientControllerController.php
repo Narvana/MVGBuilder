@@ -503,10 +503,19 @@ class ClientControllerController extends Controller
     public function DailyTransactionClient(Request $request)
     {   
 
-        $today = Carbon::today()->toDateString();  
+        // $today = Carbon::today()->toDateString();  
         // return response()->json($today);
         
         $date= $request->query('date');
+
+        if(!$date)
+        {
+            return response()->json(
+            [
+                'success'=> 0,
+                'message'=> "Please select a date"
+            ],404); 
+        }
 
         $Client = DB::table('client_controllers')
         ->leftJoin('plot_sales', 'client_controllers.id', '=', 'plot_sales.client_id')
@@ -526,15 +535,15 @@ class ClientControllerController extends Controller
             DB::raw('DATE(plot_transactions.created_at) as transaction_date')
         )
         ->where('plot_sales.plot_value', '>', '0')
-        ->whereDate('plot_transactions.created_at', $date? $date :$today)
+        ->whereDate('plot_transactions.created_at', $date)
         ->get();
         
         if($Client->isEmpty())
         {
             return response()->json(
             [
-                'success'=>0,
-                'message'=> "No Transaction Found Regarding Clients for this particular date"
+                'success'=> 0,
+                'message'=> "No Transaction Found for the selected date"
             ],404);   
         }
         return response()->json(
