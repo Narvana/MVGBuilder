@@ -271,6 +271,7 @@ class ClientControllerController extends Controller
     public function removeClient(Request $request){
         try {
             //code...
+            DB::beginTransaction();
             $params=$request->query('id');
             $client = ClientController::find($params);
             if(!$client)
@@ -278,6 +279,7 @@ class ClientControllerController extends Controller
                 return response()->json(['success'=>0,'error'=>"No data Found, in id {$params}"],404);
             }
             $client->delete();
+            
             return response()->json(['success'=>1,'message'=>'Client Removed'],200);
         }catch (\Throwable $th) {
             return response()->json([
@@ -492,7 +494,7 @@ class ClientControllerController extends Controller
     {
         // $id=$request->query('id');
 
-            $invoices=ClientInvoice::get();
+        $invoices=ClientInvoice::get();
 
         return response()->json([
            'success'=> 1,
@@ -558,7 +560,8 @@ class ClientControllerController extends Controller
         $Client = DB::table('client_controllers')
                   ->select(
                     'client_controllers.id', 
-                    'client_controllers.client_name'
+                    'client_controllers.client_name',
+                    'client_controllers.client_contact',
                   )->get(); 
 
         if($Client->isEmpty())
@@ -690,7 +693,6 @@ class ClientControllerController extends Controller
 
         $date = $request->query('date');
 
-
         $ClientEMI= DB::table('client_e_m_i_infos')
         ->leftJoin('plot_sales','plot_sales.id','=','client_e_m_i_infos.plot_sale_id')
         ->leftJoin('client_controllers','client_controllers.id','=','plot_sales.client_id')
@@ -704,8 +706,16 @@ class ClientControllerController extends Controller
             'client_e_m_i_infos.EMI_Date',
             DB::raw('ROUND((plot_sales.totalAmount * ((100 - client_e_m_i_infos.EMI_Start_at)/100))/client_e_m_i_infos.EMI_amount) as Months')
         );
-         
-        if($date)
+        
+        if($date === '0000-00-0')
+        {
+            return response()->json(
+                [
+                    'success' => 0,
+                    'message' => 'Please Select a date'
+                ],400);
+        }
+        else if($date)
         {
             $data=$ClientEMI->where('client_e_m_i_infos.EMI_Date',$date)->get();
             if($data->isEmpty())
@@ -738,26 +748,5 @@ class ClientControllerController extends Controller
                 'data' => $Clientdata
             ],200);
         }
-    
-        // if($search)
-        // {
-        //    $data = $ClientEMI->where('client_controllers.client_name', 'like', "%{$search}%")
-        // ->orWhere('client_controllers.client_contact', 'like', "%{$search}%")
-        // ->orWhere('plots.plot_No', 'like', "%{$search}%")
-        // ->get();
-        //     if(!$data)
-        //     {
-        //         return response()->json(
-        //             [
-        //                 'success' => 0,
-        //                 'message' => "No EMI found on date {$date}"
-        //             ],404);
-        //     }
-        //     return response()->json(
-        //     [
-        //         'success'=>1,
-        //         'data'=>$data
-        //     ],200);
-        // }
     }
 }
