@@ -7,6 +7,7 @@ use App\Http\Controllers\AgentRewardController;
 use App\Http\Controllers\ClientControllerController;
 use App\Http\Controllers\PlotController;
 use App\Http\Controllers\SiteController;
+use App\Models\AdminRegister;
 use App\Models\AgentReward;
 use Illuminate\Support\Facades\Route;
 
@@ -33,13 +34,12 @@ Route::group([ 'middleware'=>'api', 'prefix' => 'auth'], function () {
     Route::post("/login/admin",[AdminRegisterController::class,'loginAdmin']);
 });
 
-
 Route::middleware(['auth:sanctum','role:agent'])->group(function () {
   
     Route::get('/profile/agent', [AgentRegisterController::class, 'profile']);
    
     Route::post('/update/profile/agent', [AgentRegisterController::class, 'updateProfile']);
-      
+    
     Route::post('/change/Password/agent',[AgentRegisterController::class,'changePassword']);
    
     Route::post('/addClient/agent',[ClientControllerController::class,'addClient']);
@@ -61,9 +61,11 @@ Route::middleware(['auth:sanctum','role:agent'])->group(function () {
     
     // Agent Income
     Route::get('/agent/Income/Distributed', [AgentIncomeController::class, 'agentIncomeDISTRIBUTED']);
-    Route::get('/agent/Income/Corpus', [AgentIncomeController::class, 'agentIncomeCORPUS']);
-    Route::get('/agent/Income/Third', [AgentIncomeController::class, 'agentIncomeThird']);
 
+    Route::get('/agent/Income/Corpus', 
+    [AgentIncomeController::class, 'agentIncomeCORPUS']);
+
+    Route::get('/agent/Income/Third',[AgentIncomeController::class, 'agentIncomeThird']);
     
     Route::get('/agent/Client/Info', [AgentRegisterController::class, 'agentClientInfo']);
 
@@ -110,6 +112,8 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
 
     Route::delete('/remove/Agent',[AgentRegisterController::class,'removeAgent']);
 
+    Route::delete('/remove/Agent/Down/Line',[AdminRegisterController::class,'REMOVEAgentAdmin']);
+
     Route::put('/CONVERT/Agent/Admin',[AdminRegisterController::class,'CONVERTAgentAdmin']);
 
     Route::get('/show/Agents/admin',[AgentRegisterController::class,'showAllAgents']);
@@ -141,8 +145,6 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
     Route::get('/Daily/Transactions/Client',[ClientControllerController::class,'DailyTransactionClient']);
     
     Route::get('/Daily/Transactions/Agent',[AgentIncomeController::class,'DailyTransactionAgent']);
-
-
 });
 
 Route::get('/Client/List',[ClientControllerController::class,'ClientLists']);
