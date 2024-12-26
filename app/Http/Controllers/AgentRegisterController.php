@@ -298,7 +298,7 @@ class AgentRegisterController extends Controller
         ], 200);
     }
 
-    public function removeAgent(Request $request)
+    public function removeAgentFull(Request $request)
     {
         $params=$request->query('id');
 
@@ -311,7 +311,6 @@ class AgentRegisterController extends Controller
                     'error' => 'Agent Not Found'
                 ], 404);
             }
-    
             $agent->delete();
     
             return response()->json([
@@ -353,6 +352,7 @@ class AgentRegisterController extends Controller
      */
 
     public function updateProfile(Request $request){
+
         $agent = Auth::guard('sanctum')->user();
 
         // return response()->json($agent);
@@ -504,6 +504,8 @@ class AgentRegisterController extends Controller
 
      public function ResetPassword(Request $request)
      {
+        DB::beginTransaction();
+
          $validator=Validator::make(request()->all(),[
              'identifier' => 'required|string',
          ]);
@@ -518,20 +520,20 @@ class AgentRegisterController extends Controller
          $credentials = $request->only('identifier');
          $identifier = $credentials['identifier'];
  
-         if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-             $agent = AgentRegister::where('email', $identifier)->first();
+        if(filter_var($identifier, FILTER_VALIDATE_EMAIL)){
+            $agent = AgentRegister::where('email', $identifier)->first();
              
-             if(!$agent){
+            if(!$agent){
                 return response()->json(['success'=>0, 'error'=>'No Associate Exists with provided email'], 400);
-             }    
-         } else {
+            }    
+        }else {
              // Otherwise, assume it's a referral code
-             $agent = AgentRegister::where('referral_code', $identifier)->first();
+            $agent = AgentRegister::where('referral_code', $identifier)->first();
 
-             if(!$agent) {
+            if(!$agent) {
                 return response()->json(['success'=>0, 'error'=>'No Associate Exists with provided Referral Code'], 400);
-             }
-         }
+            }
+        }
         
          $password = 'MVG' . $agent->id .substr(uniqid(), -4); 
  
@@ -540,23 +542,20 @@ class AgentRegisterController extends Controller
          $agent->update([
             'password' => $hashpassword,
          ]);
+        
+        $url="https://www.fast2sms.com/dev/bulkV2?authorization=JqKpX9IMLieFSUH7sThu5yOElafAPw1N4Cvmc02rgWtGxbnD8jm4zNCQqYpkF8lMaXSU9rWIEeBHDiLj&route=dlt&sender_id=MVG258&message=173670&variables_values={$password}%7C&flash=0&numbers={$agent->contact_no}";
 
-         return response()->json(
-            [
-                'success' => 1, 
-                'message' => 'Password Updated', 
-                'data' => $password
-            ],200);
- 
-        //  $url = "https://www.fast2sms.com/dev/bulkV2?authorization=JqKpX9IMLieFSUH7sThu5yOElafAPw1N4Cvmc02rgWtGxbnD8jm4zNCQqYpkF8lMaXSU9rWIEeBHDiLj&route=q&message=Welcome%20to%20%20MVG%20,%20your%20new%20Password:%0AReferal%20ID%20:%20{$agent->referral_code}%0APassword%20:%20{$password}&flash=0&numbers={$agent->contact_no}";
- 
-        //  $response = Http::get($url);
- 
-        //  if($response->successful())
-        //  {
-        //      return response()->json(['success'=>1, 'response'=>$response->json()],200);
-        //  }
-        //  return response()->json(['success'=>0, 'error'=>$response->json()],500);
+        $response = Http::get($url);
+
+
+
+        return response()->json(
+        [
+            'success' => 1, 
+            'message' => 'Password Updated', 
+            'data' => $password,
+            'Sms Response'=>$response->json()
+        ],200);
      } 
 
 
@@ -924,5 +923,6 @@ class AgentRegisterController extends Controller
         }
         return response()->json(['success'=>1,'Client'=>$plot_sales],200);
     }
+
 
 }
