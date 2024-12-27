@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\AdminRegister;
+use App\Models\AgentIncome;
+use App\Models\AgentLevels;
 use App\Models\AgentRegister;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -365,6 +367,57 @@ class AdminRegisterController extends Controller
         }
         return response()->json(['success'=>1, 'data' => $agentInfo,'message' => 'Associate Information Updated By ADMIN, ASSOCIATE ID is overtaken by MVG'], 201);            
     }
+
+    public function REMOVEAgentAdmin(Request $request)
+    {
+
+        try {
+            $agent = $request->query('id');
+
+            if(!$agent)
+            {
+                return response()->json(['success'=>0, 'error' => 'Please provide the associate id'], 400);
+            }
+            $agentInfo=AgentRegister::where('id',$agent)->first();
+            if(!$agentInfo)
+            {
+                return response()->json(['success'=>0, 'error' => 'No information found regarding this associate id'], 404); 
+            }
+            $agentDownLine= AgentLevels::where('parent_id',$agent)->pluck('agent_id')->toArray();
+            $NewID=$agentDownLine;
+            $FinalIDs[]=$agentInfo->id;
+           
+            $queue = $NewID;
+            while ($queue) {
+                $currentAgent = array_shift($queue);
+                $FinalIDs[] = $currentAgent;
+        
+                $childAgents = AgentLevels::where('parent_id', $currentAgent)->pluck('agent_id')->toArray();
+                if (count($childAgents) > 0) {
+                    $queue = array_merge($queue, $childAgents);
+                }
+                // print_r($queue);
+            }
+    
+            print_r($FinalIDs);
+    
+            $incomeExists = AgentIncome::whereIn('final_agent', $FinalIDs)->exists();
+            if($incomeExists === true)
+            {
+                return response()->json(['success'=>0,'message'=>"Can't Remove This id and Agents under it"],400);
+            }
+            else 
+            {
+                AgentRegister::wherein('id',$FinalIDs)->delete();
+                // AgentLevels::wherein('parent_id',$FinalIDs)->delete();
+    
+                return response()->json(['success'=>1,'message'=>'Agents remove from Agent Register and Agent Level Table'],200);
+            }
+        }catch (\Throwable $th) {
+            return response()->json(['success'=>0, 'error' => $th->getMessage()], 500);
+        }
+    }
+
 }
 
 // php artisan make:migration add_columns_in_client_e_m_i_infos_table --table=client_e_m_i_infos
